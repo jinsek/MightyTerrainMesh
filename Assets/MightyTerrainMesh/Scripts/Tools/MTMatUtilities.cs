@@ -10,6 +10,7 @@
     {
         private static void SaveMaterail(string path, string dataName, Terrain t, int matIdx, int layerStart, string shaderName)
         {
+#if UNITY_EDITOR
             if (matIdx >= t.terrainData.alphamapTextureCount)
                 return;
             string mathPath = string.Format("{0}/{1}_{2}.mat", path, dataName, matIdx);
@@ -65,9 +66,11 @@
                 tMat.SetFloat(string.Format("_Smoothness{0}", idx), layer.smoothness);
             }
             AssetDatabase.CreateAsset(tMat, mathPath);
+#endif
         }
         public static void SaveMaterials(string path, string dataName, Terrain t)
         {
+#if UNITY_EDITOR
             if (t.terrainData == null)
             {
                 MTLog.LogError("terrain data doesn't exist");
@@ -84,10 +87,12 @@
             }
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+#endif
         }
         public static Color BakePixel(Terrain t, float u, float v)
         {
             Color c = Color.black;
+#if UNITY_EDITOR
             if (t.terrainData == null)
             {
                 MTLog.LogError("terrain data doesn't exist");
@@ -101,11 +106,13 @@
             {
                 c += BakeLayerPixel(t, i, i * 4, u, v);
             }
+#endif
             return c;
         }
         public static Color BakeLayerPixel(Terrain t, int matIdx, int layerStart, float u, float v)
         {
             Color c = Color.black;
+#if UNITY_EDITOR
             if (matIdx >= t.terrainData.alphamapTextureCount)
                 return c;
             float ctrlRes = t.terrainData.alphamapResolution;
@@ -116,10 +123,12 @@
             c += GetLayerDiffusePixel(t.terrainData, layerStart + 1, uvx, uvy, ctrl.g);
             c += GetLayerDiffusePixel(t.terrainData, layerStart + 2, uvx, uvy, ctrl.b);
             c += GetLayerDiffusePixel(t.terrainData, layerStart + 3, uvx, uvy, ctrl.a);
+#endif
             return c;
         }
         private static Color GetLayerDiffusePixel(TerrainData tData, int l, float uvx, float uvy, float weight)
         {
+#if UNITY_EDITOR
             if (l < tData.terrainLayers.Length)
             {
                 TerrainLayer layer = tData.terrainLayers[l];
@@ -129,11 +138,13 @@
                 float v = layer.tileOffset.y + tiling.y * uvy;
                 return layer.diffuseTexture.GetPixelBilinear(u - Mathf.Floor(u), v - Mathf.Floor(v)) * weight;
             }
+#endif
             return new Color(0, 0, 0, 0);
         }
         public static Color BakeNormal(Terrain t, float u, float v)
         {
             Color c = new Color(0, 0, 1, 1);
+#if UNITY_EDITOR
             if (t.terrainData == null)
             {
                 MTLog.LogError("terrain data doesn't exist");
@@ -153,10 +164,12 @@
             c.g = 0.5f * (normal.y + 1f);
             c.b = 1;
             c.a = 1;
+#endif
             return c;
         }
         public static Vector3 BakeLayerNormal(Terrain t, int matIdx, int layerStart, float u, float v)
         {
+#if UNITY_EDITOR
             if (matIdx >= t.terrainData.alphamapTextureCount)
                 return Vector3.zero;
             float ctrlRes = t.terrainData.alphamapResolution;
@@ -168,9 +181,13 @@
             normal += GetLayerNormal(t.terrainData, layerStart + 2, uvx, uvy, ctrl.b);
             normal += GetLayerNormal(t.terrainData, layerStart + 3, uvx, uvy, ctrl.a);
             return normal;
+#else
+            return Vector3.one;
+#endif
         }
         private static Vector3 GetLayerNormal(TerrainData tData, int l, float uvx, float uvy, float weight)
         {
+#if UNITY_EDITOR
             if (l < tData.terrainLayers.Length)
             {
                 TerrainLayer layer = tData.terrainLayers[l];
@@ -186,6 +203,7 @@
                 normal = normal.normalized;
                 return normal;
             }
+#endif
             return Vector3.up;
         }
     }
