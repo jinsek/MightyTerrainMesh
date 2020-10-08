@@ -81,10 +81,10 @@ public class MTViewer : MonoBehaviour
             if ((mMoveFlag & 0x02) > 0)
                 delta += Vector3.back;
             if ((mMoveFlag & 0x04) > 0)
-                q *= Quaternion.Euler(0, RotateSpeed, 0);
+                q *= Quaternion.Euler(0, RotateSpeed * Time.deltaTime, 0);
             if ((mMoveFlag & 0x08) > 0)
-                q *= Quaternion.Euler(0, -RotateSpeed, 0);
-            transform.position += MoveSpeed * transform.TransformVector(delta);
+                q *= Quaternion.Euler(0, -RotateSpeed * Time.deltaTime, 0);
+            transform.position += MoveSpeed * transform.TransformVector(delta * Time.deltaTime);
             transform.rotation *= q;
             if (Physics.Raycast(transform.position + 1000f * Vector3.up, Vector3.down, out mHit, float.MaxValue))
             {

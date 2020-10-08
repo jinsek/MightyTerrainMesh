@@ -3,8 +3,13 @@
     using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
-    
-    internal class CreateDataJob
+    public class MeshLODCreate
+    {
+        public int Subdivision = 3;
+        public float SlopeAngleError = 5f;
+    }
+
+    public class CreateDataJob
     {
         public MTTerrainScanner[] LODs;
         private int curLodIdx = 0;
@@ -26,12 +31,12 @@
                 return 1;
             }
         }
-        public CreateDataJob(Bounds VolumnBound, int mx, int mz, MTMeshLODSetting[] setting)
+        public CreateDataJob(Bounds VolumnBound, int mx, int mz, MeshLODCreate[] setting)
         {
             LODs = new MTTerrainScanner[setting.Length];
             for (int i = 0; i < setting.Length; ++i)
             {
-                MTMeshLODSetting s = setting[i];
+                MeshLODCreate s = setting[i];
                 //only first lod stitch borders, other lod use the most detailed border to avoid 
                 //tearing on the border
                 LODs[i] = new MTTerrainScanner(VolumnBound, s.Subdivision, s.SlopeAngleError, mx, mz,
@@ -68,7 +73,7 @@
         }
     }
 
-    internal class MTTerrainScanner : ITerrainTreeScaner
+    public class MTTerrainScanner : ITerrainTreeScaner
     {
         public int maxX { get; private set; }
         public int maxZ { get; private set; }

@@ -5,7 +5,7 @@
     using UnityEngine;
     using TriangleNet.Geometry;
     //
-    internal class TessellationJob
+    public class TessellationJob
     {
         public MTMeshData[] mesh;
         public MTTerrainScanner[] scanners;

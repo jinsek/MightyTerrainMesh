@@ -7,10 +7,8 @@ using MightyTerrainMesh;
 using System;
 //
 [Serializable]
-public class MTMeshLODSetting
+public class MTMeshLODSetting : MeshLODCreate
 {
-    public int Subdivision = 3;
-    public float SlopeAngleError = 5f;
     public bool bEditorUIFoldout = true;
 }
 //
@@ -135,7 +133,8 @@ public class MTMeshCreator : MonoBehaviour
         MTLog.Log("mesh saved!");
         MTFileUtils.SaveQuadTreeHeader(DataName, header, Terrain.activeTerrain.terrainData.alphamapTextureCount);
         MTLog.Log("header saved!");
-        MTMatUtils.SaveMaterials(DataName, Terrain.activeTerrain);
+        string matPath = "Assets/MightyTerrainMesh/Resources";
+        MTMatUtils.SaveMaterials(matPath, DataName, Terrain.activeTerrain);
         MTLog.Log("material saved!");
     }
     public void EditorCreatePreview()
