@@ -159,10 +159,9 @@
             {
                 normal += BakeLayerNormal(t, i, i * 4, u, v);
             }
-            normal = normal.normalized;
             c.r = 0.5f * (normal.x + 1f);
             c.g = 0.5f * (normal.y + 1f);
-            c.b = 1;
+            c.b = 0.5f * (normal.z + 1f);
             c.a = 1;
 #endif
             return c;
@@ -176,16 +175,17 @@
             float uvx = u / ctrlRes;
             float uvy = v / ctrlRes;
             Color ctrl = t.terrainData.alphamapTextures[matIdx].GetPixelBilinear(uvx, uvy);
-            Vector3 normal = GetLayerNormal(t.terrainData, layerStart, uvx, uvy, ctrl.r);
-            normal += GetLayerNormal(t.terrainData, layerStart + 1, uvx, uvy, ctrl.g);
-            normal += GetLayerNormal(t.terrainData, layerStart + 2, uvx, uvy, ctrl.b);
-            normal += GetLayerNormal(t.terrainData, layerStart + 3, uvx, uvy, ctrl.a);
+            Vector3 normal = GetLayerNormal(t.terrainData, layerStart, uvx, uvy) * ctrl.r;
+            normal += GetLayerNormal(t.terrainData, layerStart + 1, uvx, uvy) * ctrl.g;
+            normal += GetLayerNormal(t.terrainData, layerStart + 2, uvx, uvy) * ctrl.b;
+            normal += GetLayerNormal(t.terrainData, layerStart + 3, uvx, uvy) * ctrl.a;
+            normal.z = 0.00001f;
             return normal;
 #else
             return Vector3.one;
 #endif
         }
-        private static Vector3 GetLayerNormal(TerrainData tData, int l, float uvx, float uvy, float weight)
+        private static Vector3 GetLayerNormal(TerrainData tData, int l, float uvx, float uvy)
         {
 #if UNITY_EDITOR
             if (l < tData.terrainLayers.Length)
@@ -195,12 +195,14 @@
                    tData.size.z / layer.tileSize.y);
                 float u = layer.tileOffset.x + tiling.x * uvx;
                 float v = layer.tileOffset.y + tiling.y * uvy;
-                Color norm = layer.normalMapTexture.GetPixelBilinear(u - Mathf.Floor(u), v - Mathf.Floor(v)) * weight;
+                Color norm = layer.normalMapTexture.GetPixelBilinear(u - Mathf.Floor(u), v - Mathf.Floor(v));
                 Vector3 normal = Vector3.up;
-                normal.x = (norm.r * 2 - 1) * layer.normalScale;
+                //Unity is saving the normal map in the DXT5 file format, the red channel is stored in the alpha channel 
+                normal.x = (norm.a * 2 - 1) * layer.normalScale;
                 normal.y = (norm.g * 2 - 1) * layer.normalScale;
-                normal.z = Mathf.Sqrt(1 - Mathf.Clamp01(Vector3.Dot(normal, normal)));
-                normal = normal.normalized;
+                normal.z = 0;
+                float z = Mathf.Sqrt(1 - Mathf.Clamp01(Vector3.Dot(normal, normal)));
+                normal.z = z;
                 return normal;
             }
 #endif
