@@ -191,6 +191,8 @@
             if (l < tData.terrainLayers.Length)
             {
                 TerrainLayer layer = tData.terrainLayers[l];
+                if (layer.normalMapTexture == null)
+                    return Vector3.zero;
                 Vector2 tiling = new Vector2(tData.size.x / layer.tileSize.x,
                    tData.size.z / layer.tileSize.y);
                 float u = layer.tileOffset.x + tiling.x * uvx;
@@ -206,7 +208,7 @@
                 return normal;
             }
 #endif
-            return Vector3.up;
+            return Vector3.zero;
         }
     }
 }
