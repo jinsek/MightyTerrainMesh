@@ -7,16 +7,90 @@
     using System.IO;
     public static class MTFileUtils
     {
-        private static void WriteVector3(FileStream stream, Vector3 v)
+        public static void WriteInt(Stream stream, int v)
+        {
+            byte[] sBuff = BitConverter.GetBytes(v);
+            stream.Write(sBuff, 0, sBuff.Length);
+        }
+        public static int ReadInt(Stream stream)
+        {
+            int v = 0;
+            byte[] sBuff = new byte[sizeof(int)];
+            stream.Read(sBuff, 0, sizeof(int));
+            v = BitConverter.ToInt32(sBuff, 0);
+            return v;
+        }
+        public static void WriteUShort(Stream stream, ushort v)
+        {
+            byte[] sBuff = BitConverter.GetBytes(v);
+            stream.Write(sBuff, 0, sBuff.Length);
+        }
+        public static ushort ReadUShort(Stream stream)
+        {
+            ushort v = 0;
+            byte[] sBuff = new byte[sizeof(ushort)];
+            stream.Read(sBuff, 0, sizeof(ushort));
+            v = BitConverter.ToUInt16(sBuff, 0);
+            return v;
+        }
+        public static void WriteFloat(Stream stream, float v)
+        {
+            byte[] sBuff = BitConverter.GetBytes(v);
+            stream.Write(sBuff, 0, sBuff.Length);
+        }
+        public static float ReadFloat(Stream stream)
+        {
+            float v = 0;
+            byte[] sBuff = new byte[sizeof(float)];
+            stream.Read(sBuff, 0, sizeof(float));
+            v = BitConverter.ToSingle(sBuff, 0);
+            return v;
+        }
+        public static void WriteColor(Stream stream, Color v)
+        {
+            //byte[] sBuff = BitConverter.GetBytes(v.r);
+            //stream.Write(sBuff, 0, sBuff.Length);
+            //sBuff = BitConverter.GetBytes(v.g);
+            //stream.Write(sBuff, 0, sBuff.Length);
+            //sBuff = BitConverter.GetBytes(v.b);
+            //stream.Write(sBuff, 0, sBuff.Length);
+            //sBuff = BitConverter.GetBytes(v.a);
+            //stream.Write(sBuff, 0, sBuff.Length);
+            byte[] sBuff = new byte[4];
+            sBuff[0] = (byte)Mathf.FloorToInt(v.r * 255);
+            sBuff[1] = (byte)Mathf.FloorToInt(v.g * 255);
+            sBuff[2] = (byte)Mathf.FloorToInt(v.b * 255);
+            sBuff[3] = (byte)Mathf.FloorToInt(v.a * 255);
+            stream.Write(sBuff, 0, sBuff.Length);
+        }
+        public static Color ReadColor(Stream stream)
+        {
+            Color v = Color.black;
+            //byte[] sBuff = new byte[sizeof(float)];
+            //stream.Read(sBuff, 0, sizeof(float));
+            //v.r = BitConverter.ToSingle(sBuff, 0);
+            //stream.Read(sBuff, 0, sizeof(float));
+            //v.g = BitConverter.ToSingle(sBuff, 0);
+            //stream.Read(sBuff, 0, sizeof(float));
+            //v.b = BitConverter.ToSingle(sBuff, 0);
+            //stream.Read(sBuff, 0, sizeof(float));
+            //v.a = BitConverter.ToSingle(sBuff, 0);
+            v.r = stream.ReadByte() / 255f;
+            v.g = stream.ReadByte() / 255f;
+            v.b = stream.ReadByte() / 255f;
+            v.a = stream.ReadByte() / 255f;
+            return v;
+        }
+        public static void WriteVector3(Stream stream, Vector3 v)
         {
             byte[] sBuff = BitConverter.GetBytes(v.x);
-            stream.Write(sBuff, 0, sBuff.Length); 
+            stream.Write(sBuff, 0, sBuff.Length);
             sBuff = BitConverter.GetBytes(v.y);
             stream.Write(sBuff, 0, sBuff.Length);
             sBuff = BitConverter.GetBytes(v.z);
             stream.Write(sBuff, 0, sBuff.Length);
         }
-        private static Vector3 ReadVector3(FileStream stream)
+        public static Vector3 ReadVector3(Stream stream)
         {
             Vector3 v = Vector3.zero;
             byte[] sBuff = new byte[sizeof(float)];

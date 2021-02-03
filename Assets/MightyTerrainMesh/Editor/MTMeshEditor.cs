@@ -40,6 +40,7 @@ public class MTMeshEditor : EditorWindow
     private bool BakeMaterial = false;
     private int BakeTexRes = 2048;
     private bool genUV2 = false;
+    private int terrainLayer = 0;
     //
     private CreateDataJob dataCreateJob;
     private TessellationJob tessellationJob;
@@ -86,6 +87,7 @@ public class MTMeshEditor : EditorWindow
             BakeTexRes = EditorGUILayout.IntField("Bake Texture Resolution", BakeTexRes);
             BakeTexRes = Mathf.Min(2048, Mathf.NextPowerOfTwo(BakeTexRes));
         }
+        terrainLayer = EditorGUILayout.LayerField("Layer Mask", terrainLayer);
         if (GUILayout.Button("Generate"))
         {
             if (LODSettings == null || LODSettings.Length == 0)
@@ -96,6 +98,11 @@ public class MTMeshEditor : EditorWindow
             if (terrainTarget == null)
             {
                 MTLog.LogError("no target terrain");
+                return;
+            }
+            if (terrainTarget.transform.position != Vector3.zero)
+            {
+                MTLog.LogError("terrain transform should be in zero point");
                 return;
             }
             string[] lodFolder = new string[LODSettings.Length];
@@ -143,6 +150,12 @@ public class MTMeshEditor : EditorWindow
             }
             EditorUtility.ClearProgressBar();
             AssetDatabase.Refresh();
+        }
+        if (GUILayout.Button("Grab Details"))
+        {
+            string guid = AssetDatabase.CreateFolder("Assets", string.Format("{0}_Details", terrainTarget.name));
+            AssetDatabase.Refresh();
+            EditorGrabDetails(AssetDatabase.GUIDToAssetPath(guid), terrainTarget, terrainLayer);
         }
     }
     //functions
@@ -629,5 +642,142 @@ public class MTMeshEditor : EditorWindow
         jobData.startU = startU;
         jobData.startV = startV;
         return jobData;
+    }
+
+    private string ExportDensity2Bytes(string folderName, int idx, MemoryStream ms)
+    {
+        string texFilePath = Path.Combine(folderName, string.Format("detail_layers{0}.bytes", idx));
+        string unityPath = AssetDatabase.GenerateUniqueAssetPath(texFilePath);
+        texFilePath = unityPath.Substring(7);
+        texFilePath = Path.Combine(Application.dataPath, texFilePath);
+        File.WriteAllBytes(texFilePath, ms.ToArray());
+        return unityPath;
+    }
+    private ushort SpawnOnePixel(DetailPrototype detailLayer, int layer, float start_x, float start_z, float pixelSize, int subGridSize, int maxDen, float maxH, MemoryStream ms)
+    {
+        ushort spawnedCount = 0;
+        float stride = pixelSize / subGridSize;
+        int layerMask = 1 << layer;
+        RaycastHit hit = new RaycastHit();
+        for (int sub_u = 0; sub_u < subGridSize; ++sub_u)
+        {
+            for (int sub_v = 0; sub_v < subGridSize; ++sub_v)
+            {
+                if (spawnedCount >= maxDen)
+                    break;
+                Vector2 localuv = new Vector2(start_x + stride * sub_u, start_z + stride * sub_v);
+                float noise = Mathf.PerlinNoise(localuv.x, localuv.y) * pixelSize;
+                float xOffset = stride * sub_u + noise;
+                float zOffset = stride * sub_v + noise;
+                Vector3 top = new Vector3(start_x + xOffset, maxH, start_z + zOffset);
+                if (Physics.Raycast(top, Vector3.down, out hit, 2 * maxH, layerMask))
+                {
+                    Vector2 noisexy = detailLayer.noiseSpread * localuv;
+                    float spread_noise = Mathf.PerlinNoise(noisexy.x, noisexy.y) * pixelSize;
+                    float width = detailLayer.minWidth + (detailLayer.maxWidth - detailLayer.minWidth) * spread_noise;
+                    float height = detailLayer.minHeight + (detailLayer.maxHeight - detailLayer.minHeight) * spread_noise;
+                    Color c = detailLayer.dryColor + (detailLayer.healthyColor - detailLayer.dryColor) * spread_noise;
+                    MTFileUtils.WriteVector3(ms, hit.point);
+                    MTFileUtils.WriteVector3(ms, new Vector3(width, height, width));
+                    MTFileUtils.WriteColor(ms, c);
+                    ++spawnedCount;
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning("SpawnOnePixel hits no terrain mesh");
+                }
+            }
+        }
+        return spawnedCount;
+    }
+    private void EditorGrabDetails(string folderName, Terrain terrainTarget, int layer)
+    {
+        if (terrainTarget == null)
+        {
+            MTLog.LogError("no active terrain");
+            return;
+        }
+        TerrainData data = terrainTarget.terrainData;
+        int detailLayerCnt = data.detailPrototypes.Length;
+        int dataLen = data.detailResolution * data.detailResolution;
+        string[] savedAssets = new string[detailLayerCnt];
+        Bounds bound = data.bounds;
+        float pixelSize = bound.size.x / data.detailResolution;
+        for (int i = 0; i < detailLayerCnt; ++i)
+        {
+            MemoryStream ms = new MemoryStream();
+            int totalCnt = 0;
+            MTFileUtils.WriteInt(ms, totalCnt);
+            DetailPrototype proto = data.detailPrototypes[i];
+            //prototype info
+            //raw data
+            int[,] dlayer = data.GetDetailLayer(0, 0, data.detailResolution, data.detailResolution, i);
+            for (int u = 0; u < data.detailResolution; ++u)
+            {
+                for (int v = 0; v < data.detailResolution; ++v)
+                {
+                    ushort pixelDen = (ushort)dlayer[v, u];
+                    //gen data inside
+                    if (pixelDen <= 0)
+                        continue;
+                    //data count
+                    long countOffset = ms.Position;
+                    MTFileUtils.WriteUShort(ms, pixelDen);
+                    int subGridSize = Mathf.CeilToInt(Mathf.Sqrt(pixelDen));
+                    float start_x = bound.min.x + u * pixelSize;
+                    float start_z = bound.min.z + v * pixelSize;
+                    ushort spawnedCount = SpawnOnePixel(proto, layer, start_x, start_z, pixelSize, subGridSize, pixelDen, bound.max.y, ms);
+                    if (countOffset != pixelDen)
+                    {
+                        long posCache = ms.Position;
+                        ms.Position = countOffset;
+                        MTFileUtils.WriteUShort(ms, spawnedCount);
+                        ms.Position = posCache;
+                    }
+                    totalCnt += spawnedCount;
+                    EditorUtility.DisplayProgressBar("bake details", "processing", (float)(u * data.detailResolution + v) / (data.detailResolution * data.detailResolution));
+                }
+            }
+            ms.Position = 0;
+            MTFileUtils.WriteInt(ms, totalCnt);
+            savedAssets[i] = ExportDensity2Bytes(folderName, i, ms);
+            ms.Close();
+        }
+        EditorUtility.ClearProgressBar();
+        AssetDatabase.Refresh();
+
+        //add componet and parameter
+        GameObject prefabObj = new GameObject("detail_layers");
+        prefabObj.transform.position = terrainTarget.transform.position;
+        MTDetailBatchRenderer dr = prefabObj.AddComponent<MTDetailBatchRenderer>();
+        dr.layers = new MTDetailBatchRenderer.ProtoLayerInfo[detailLayerCnt];
+        for (int i = 0; i < detailLayerCnt; ++i)
+        {
+            DetailPrototype proto = data.detailPrototypes[i];
+            if (savedAssets[i] == null || proto.prototype == null)
+                continue;
+            MeshFilter mf = proto.prototype.GetComponent<MeshFilter>();
+            if (mf == null)
+                continue;
+            MeshRenderer mr = proto.prototype.GetComponent<MeshRenderer>();
+            if (mr == null)
+                continue;
+            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(savedAssets[i]);
+            dr.layers[i] = new MTDetailBatchRenderer.ProtoLayerInfo();
+            dr.layers[i].detailData = asset;
+            dr.layers[i].mesh = mf.sharedMesh;
+            dr.layers[i].mat = mr.sharedMaterial;
+        }
+        dr.bnds = bound;
+        //dr.detailShader = AssetDatabase.LoadAssetAtPath<ComputeShader>("Assets/MightyTerrainMesh/Shaders/TerrainDetailMask");
+        dr.detailDistance = Terrain.activeTerrain.detailObjectDistance;
+        dr.detailDensity = Terrain.activeTerrain.detailObjectDensity;
+        dr.detailResolution = data.detailResolution;
+        dr.detailResolutionPerPatch = data.detailResolutionPerPatch;
+
+        string prefabPath = Path.Combine(folderName, "detail_layers.prefab");
+        PrefabUtility.SaveAsPrefabAsset(prefabObj, prefabPath);
+        DestroyImmediate(prefabObj);
+        AssetDatabase.Refresh();
     }
 }
