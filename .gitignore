@@ -1,0 +1,7 @@
+.vs/
+Assembly-CSharp.csproj
+Assembly-CSharp-Editor.csproj
+MightyTerrainMesh.sln
+Library/
+obj/
+Packages/packages-lock.json
