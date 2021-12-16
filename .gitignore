@@ -7,3 +7,7 @@ obj/
 Packages/packages-lock.json
 Temp/
 UserSettings/
+Unity.RenderPipeline.Universal.ShaderLibrary.csproj
+Unity.RenderPipelines.Universal.Editor.csproj
+Unity.RenderPipelines.Universal.Runtime.csproj
+Unity.RenderPipelines.Universal.Shaders.csproj
