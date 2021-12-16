@@ -1,181 +1,199 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using MightyTerrainMesh;
+﻿namespace MightyTerrainMesh
+{
+    using System;
+    using System.IO;
+    using System.Collections.Generic;
+    using UnityEngine;
 
-internal class MTPatch
-{
-    private static Queue<MTPatch> _qPool = new Queue<MTPatch>();
-    public static MTPatch Pop(Material[] mats)
+    internal class MTRuntimeMeshPool
     {
-        if (_qPool.Count > 0)
+        class MeshStreamCache
         {
-            return _qPool.Dequeue();
-        }
-        return new MTPatch(mats);
-    }
-    public static void Push(MTPatch p)
-    {
-        p.mGo.SetActive(false);
-        _qPool.Enqueue(p);
-    }
-    public static void Clear()
-    {
-        while(_qPool.Count > 0)
-        {
-            _qPool.Dequeue().DestroySelf();
-        }
-    }
-    public uint PatchId { get; private set; }
-    private GameObject mGo;
-    private MeshFilter mMesh;
-    public MTPatch(Material[] mats)
-    {
-        mGo = new GameObject("_mtpatch");
-        MeshRenderer meshR;
-        mMesh = mGo.AddComponent<MeshFilter>();
-        meshR = mGo.AddComponent<MeshRenderer>();
-        meshR.materials = mats;
-    }
-    public void Reset(uint id, Mesh m)
-    {
-        mGo.SetActive(true);
-        PatchId = id;
-        mMesh.mesh = m;
-    }
-    private void DestroySelf()
-    {
-        if (mGo != null)
-            MonoBehaviour.Destroy(mGo);
-        mGo = null;
-        mMesh = null;
-    }
-}
-internal class MTRuntimeMesh
-{
-    public int MeshID { get; private set; }
-    private Mesh[] mLOD;
-    public MTRuntimeMesh(int meshid, int lod, string dataName)
-    {
-        MeshID = meshid;
-        mLOD = new Mesh[lod];
-        MTFileUtils.LoadMesh(mLOD, dataName, meshid);
-    }
-    public Mesh GetMesh(int lod)
-    {
-        lod = Mathf.Clamp(lod, 0, mLOD.Length - 1);
-        return mLOD[lod];
-    }
-}
-
-public class MTLoader : MonoBehaviour
-{
-    public string DataName = "";
-    [Header("LOD distance")]
-    public float[] lodPolicy = new float[1] { 0 };
-    private Camera mCamera;
-    private MTQuadTreeHeader mHeader;
-    private MTQuadTreeNode mRoot;
-    //patch identifier [meshid 30bit][lod 2bit]
-    private MTArray<uint> mVisiblePatches;
-    private Dictionary<uint, MTPatch> mActivePatches = new Dictionary<uint, MTPatch>();
-    private Dictionary<uint, MTPatch> mPatchesFlipBuffer = new Dictionary<uint, MTPatch>();
-    //meshes
-    private Dictionary<int, MTRuntimeMesh> mMeshPool = new Dictionary<int, MTRuntimeMesh>();
-    private bool mbDirty = true;
-    private Mesh GetMesh(uint patchId)
-    {
-        int mId = (int)(patchId >> 2);
-        int lod = (int)(patchId & 0x00000003);
-        if (mMeshPool.ContainsKey(mId))
-        {
-            return mMeshPool[mId].GetMesh(lod);
-        }
-        MTRuntimeMesh rm = new MTRuntimeMesh(mId, mHeader.LOD, mHeader.DataName);
-        mMeshPool.Add(mId, rm);
-        return rm.GetMesh(lod);
-    }
-    public void SetDirty()
-    {
-        mbDirty = true;
-    }
-    private void Awake()
-    {
-        if (DataName == "")
-            return;
-        try
-        {
-            mHeader = MTFileUtils.LoadQuadTreeHeader(DataName);
-            mRoot = new MTQuadTreeNode(mHeader.QuadTreeDepth, mHeader.BoundMin, mHeader.BoundMax);
-            foreach (var mh in mHeader.Meshes.Values)
-                mRoot.AddMesh(mh);
-            int gridMax = 1 << mHeader.QuadTreeDepth;
-            mVisiblePatches = new MTArray<uint>(gridMax * gridMax);
-            if (lodPolicy.Length < mHeader.LOD)
+            public string Path { get; private set; }
+            public bool Obseleted
             {
-                float[] policy = new float[mHeader.LOD];
-                for (int i = 0; i < lodPolicy.Length; ++i)
-                    policy[i] = lodPolicy[i];
-                lodPolicy = policy;
+                get { return offsets == null || usedCount == offsets.Length; }
             }
-            lodPolicy[0] = Mathf.Clamp(lodPolicy[0], 0.5f * mRoot.Bound.size.x / gridMax, lodPolicy[0]);
-            lodPolicy[lodPolicy.Length - 1] = float.MaxValue;
-        }
-        catch
-        {
-            mHeader = null;
-            mRoot = null;
-            MTLog.LogError("MTLoader load quadtree header failed");
-        }
-        mCamera = GetComponent<Camera>();
-    }
-    private void OnDestroy()
-    {
-        MTPatch.Clear();
-    }
-    // Start is called before the first frame update
-    void Start()
-    {}
-
-    // Update is called once per frame
-    void Update()
-    {
-        //every 10 frame update once
-        if (mCamera == null || mRoot == null || !mCamera.enabled || !mbDirty)
-            return;
-        mbDirty = false;
-        Plane[] planes = GeometryUtility.CalculateFrustumPlanes(mCamera);
-        mVisiblePatches.Reset();
-        mRoot.RetrieveVisibleMesh(planes, transform.position, lodPolicy,  mVisiblePatches);
-        mPatchesFlipBuffer.Clear();
-        for (int i = 0; i < mVisiblePatches.Length; ++i)
-        {
-            uint pId = mVisiblePatches.Data[i];
-            if (mActivePatches.ContainsKey(pId))
+            private MemoryStream memStream;
+            private int[] offsets;
+            private int usedCount = 0;
+            public MeshStreamCache(string path, int pack, byte[] data)
             {
-                mPatchesFlipBuffer.Add(pId, mActivePatches[pId]);
-                mActivePatches.Remove(pId);
-            }
-            else
-            {
-                //new patches
-                Mesh m = GetMesh(pId);
-                if (m != null)
+                Path = path;
+                memStream = new MemoryStream(data);
+                offsets = new int[pack];
+                for (int i = 0; i < pack; ++i)
                 {
-                    MTPatch patch = MTPatch.Pop(mHeader.RuntimeMats);
-                    patch.Reset(pId, m);
-                    mPatchesFlipBuffer.Add(pId, patch);
+                    offsets[i] = MTFileUtils.ReadInt(memStream);
                 }
             }
+            public MTRenderMesh GetMesh(int meshId)
+            {
+                int offset_stride = meshId % offsets.Length;
+                int offset = offsets[offset_stride];
+                var rm = new MTRenderMesh();
+                memStream.Position = offset;
+                MTMeshUtils.Deserialize(memStream, rm);
+                ++usedCount;
+                return rm;
+            }
+            public void Clear()
+            {
+                memStream.Close();
+            }
         }
-        Dictionary<uint, MTPatch>.Enumerator iPatch = mActivePatches.GetEnumerator();
-        while (iPatch.MoveNext())
+        private MTData rawData;
+        private Dictionary<int, MTRenderMesh> parsedMesh = new Dictionary<int, MTRenderMesh>();
+        //数据缓存，一旦全部转换为mesh后将删除
+        private Dictionary<string, MeshStreamCache> dataStreams = new Dictionary<string, MeshStreamCache>();
+        private IMeshDataLoader loader;
+        public MTRuntimeMeshPool(MTData data, IMeshDataLoader ld)
         {
-            MTPatch.Push(iPatch.Current.Value);
+            rawData = data;
+            loader = ld;
         }
-        mActivePatches.Clear();
-        Dictionary<uint, MTPatch> temp = mPatchesFlipBuffer;
-        mPatchesFlipBuffer = mActivePatches;
-        mActivePatches = temp;
+        public MTRenderMesh PopMesh(int meshId)
+        {
+            if (!parsedMesh.ContainsKey(meshId) && meshId >= 0)
+            {
+                int startMeshId = meshId / rawData.MeshDataPack * rawData.MeshDataPack;
+                var path = string.Format("{0}_{1}", rawData.MeshPrefix, startMeshId);
+                if (!dataStreams.ContainsKey(path))
+                {
+                    var meshbytes = loader.LoadMeshData(path);
+                    var cache = new MeshStreamCache(path, rawData.MeshDataPack, meshbytes);
+                    dataStreams.Add(path, cache);
+                }
+                var streamCache = dataStreams[path];
+                var rm = streamCache.GetMesh(meshId);
+                parsedMesh.Add(meshId, rm);
+                if (streamCache.Obseleted)
+                {
+                    dataStreams.Remove(streamCache.Path);
+                    loader.UnloadAsset(streamCache.Path);
+                    streamCache.Clear();
+                }
+            }
+            if (parsedMesh.ContainsKey(meshId))
+            {
+                return parsedMesh[meshId];
+            }
+            return null;
+        }
+        public void Clear()
+        {
+            foreach (var cache in dataStreams.Values)
+            {
+                loader.UnloadAsset(cache.Path);
+                cache.Clear();
+            }
+            dataStreams.Clear();
+            foreach (var m in parsedMesh.Values)
+            {
+                m.Clear();
+            }
+            parsedMesh.Clear();
+        }
+    }
+
+    public class MTLoader : MonoBehaviour
+    {
+        public MTData header;
+        public MTLODPolicy lodPolicy;
+        public Camera cullCamera;
+        public GameObject VTCreatorGo;
+        public bool receiveShadow = true;
+        public float detailDrawDistance = 80;
+        public bool showDebug = false;
+        //
+        private MTRuntimeMeshPool meshPool;
+        private MTQuadTreeUtil quadtree;
+        private MTHeightMap heightMap;
+        private MTArray<MTQuadTreeNode> activeCmd;
+        private MTArray<MTQuadTreeNode> deactiveCmd;
+        private Dictionary<int, MTPooledRenderMesh> activeMeshes = new Dictionary<int, MTPooledRenderMesh>();
+        private IVTCreator vtCreator;
+        private MTDetailRenderer detailRenderer;
+        private Matrix4x4 projM;
+        private Matrix4x4 detailProjM;
+        private Matrix4x4 prevWorld2Cam;
+        private Plane[] detailCullPlanes = new Plane[6];
+        private void ActiveMesh(MTQuadTreeNode node)
+        {
+            MTPooledRenderMesh patch = MTPooledRenderMesh.Pop();
+            var m = meshPool.PopMesh(node.meshIdx);
+            patch.Reset(header, vtCreator, m, transform.position);
+            activeMeshes.Add(node.meshIdx, patch);
+        }
+        private void DeactiveMesh(MTQuadTreeNode node)
+        {
+            var p = activeMeshes[node.meshIdx];
+            activeMeshes.Remove(node.meshIdx);
+            MTPooledRenderMesh.Push(p);
+        }
+        private void Awake()
+        {
+            IMeshDataLoader loader = new MeshDataResLoader();
+            quadtree = new MTQuadTreeUtil(header.TreeData.bytes, transform.position);
+            heightMap = new MTHeightMap(quadtree.Bound, header.HeightmapResolution, header.HeightmapScale, header.HeightMap.bytes);
+            activeCmd = new MTArray<MTQuadTreeNode>(quadtree.NodeCount);
+            deactiveCmd = new MTArray<MTQuadTreeNode>(quadtree.NodeCount);
+            meshPool = new MTRuntimeMeshPool(header, loader);
+            vtCreator = VTCreatorGo.GetComponent<IVTCreator>();
+            detailRenderer = new MTDetailRenderer(header, quadtree.Bound, receiveShadow);
+            prevWorld2Cam = Matrix4x4.identity;
+            projM = Matrix4x4.Perspective(cullCamera.fieldOfView, cullCamera.aspect, cullCamera.nearClipPlane, cullCamera.farClipPlane);
+            detailProjM = Matrix4x4.Perspective(cullCamera.fieldOfView, cullCamera.aspect, cullCamera.nearClipPlane, detailDrawDistance);
+        }
+        // Update is called once per frame
+        void Update()
+        {
+            if (quadtree != null && cullCamera != null)
+            {
+                Matrix4x4 world2Cam = cullCamera.worldToCameraMatrix;
+                if (prevWorld2Cam != world2Cam)
+                {
+                    prevWorld2Cam = world2Cam;
+                    activeCmd.Reset();
+                    deactiveCmd.Reset();
+                    quadtree.CullQuadtree(cullCamera.transform.position, cullCamera.fieldOfView, Screen.height, Screen.width, world2Cam, projM,
+                        activeCmd, deactiveCmd, lodPolicy);
+                    for (int i = 0; i < activeCmd.Length; ++i)
+                    {
+                        ActiveMesh(activeCmd.Data[i]);
+                    }
+                    for (int i = 0; i < deactiveCmd.Length; ++i)
+                    {
+                        DeactiveMesh(deactiveCmd.Data[i]);
+                    }
+                    if (quadtree.ActiveNodes.Length > 0)
+                    {
+                        for (int i=0; i< quadtree.ActiveNodes.Length; ++i)
+                        {
+                            var node = quadtree.ActiveNodes.Data[i];
+                            var p = activeMeshes[node.meshIdx];
+                            p.UpdatePatch(cullCamera.transform.position, cullCamera.fieldOfView, Screen.height, Screen.width);
+                        }
+                    }
+                    GeometryUtility.CalculateFrustumPlanes(detailProjM * world2Cam, detailCullPlanes);                    
+                    detailRenderer.Cull(detailCullPlanes);
+                }
+                detailRenderer.OnUpdate(cullCamera);
+            }
+        }
+        private void OnDestroy()
+        {
+            detailRenderer.Clear();
+            meshPool.Clear();
+            MTPooledRenderMesh.Clear();
+            MTHeightMap.UnregisterMap(heightMap);
+        }
+        private void OnDrawGizmos()
+        {
+            if (!showDebug)
+                return;
+            if (detailRenderer != null)
+                detailRenderer.DrawDebug();
+        }
     }
 }

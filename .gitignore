@@ -5,3 +5,5 @@ MightyTerrainMesh.sln
 Library/
 obj/
 Packages/packages-lock.json
+Temp/
+UserSettings/

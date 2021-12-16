@@ -44,5 +44,14 @@
             Data[Length] = item;
             ++Length;
         }
+        public bool Contains(T item)
+        {
+            for(int i=0; i<Length; ++i)
+            {
+                if (Data[i].Equals(item))
+                    return true;
+            }
+            return false;
+        }
     }
 }

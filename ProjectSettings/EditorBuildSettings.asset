@@ -6,9 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: 
-    guid: 00000000000000000000000000000000
-  - enabled: 1
-    path: Assets/MightyTerrainMesh/Scenes/Demo1.unity
+    path: Assets/Scenes/VTDemo.unity
+    guid: 44ff447710a415448bd0c6a3e7c97e8c
+  - enabled: 0
+    path: Assets/Scenes/TerrainDemo.unity
     guid: c9245df1074b9aa49a2016844cff1189
   m_configObjects: {}

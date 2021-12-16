@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7422ed6567b40b346acdbf91d364934e, type: 3}
+  m_Name: heightfield_6
+  m_EditorClassIdentifier: 
+  DetailMats:
+  - {fileID: 2100000, guid: 6e879fa1f4b89d74abaf83a2a7d869ac, type: 2}
+  - {fileID: 2100000, guid: 288a79589480e5941923e8dc341e4633, type: 2}
+  BakeDiffuseMats:
+  - {fileID: 2100000, guid: 47c1dfddad4038242a813fee9f88080c, type: 2}
+  - {fileID: 2100000, guid: 1e7f8adbcbbbeac44ba428c88b224126, type: 2}
+  BakeNormalMats:
+  - {fileID: 2100000, guid: b6c2fb3323dc8c84a9af713dfe775cbd, type: 2}
+  - {fileID: 2100000, guid: f467d81747e5160499b090630585ca90, type: 2}
+  BakedMat: {fileID: 2100000, guid: f169b632136d9d949a3c0cf0652a7f14, type: 2}
+  TreeData: {fileID: 4900000, guid: 89b137b81f7fa644aad16837ddd3e33e, type: 3}
+  MeshDataPack: 64
+  MeshPrefix: heightfield_6
+  HeightMap: {fileID: 4900000, guid: fec530a9b84c40c4486c629126322fb5, type: 3}
+  HeightmapScale: {x: 2, y: 115.05336, z: 2}
+  HeightmapResolution: 257
+  DetailPrototypes:
+  - prototype: {fileID: 7048643380441350721, guid: 82e29e1d8fa1a454ab636bfd08038d14,
+      type: 3}
+    minWidth: 2
+    maxWidth: 3
+    minHeight: 2
+    maxHeight: 3
+    noiseSpread: 0.1
+    healthyColor: {r: 1, g: 1, b: 1, a: 1}
+    dryColor: {r: 1, g: 1, b: 1, a: 1}
+    maxDensity: 1
+  - prototype: {fileID: 8976685920760456344, guid: 8fd5383d027ec5741880a29061024733,
+      type: 3}
+    minWidth: 2
+    maxWidth: 3
+    minHeight: 2
+    maxHeight: 3
+    noiseSpread: 0.1
+    healthyColor: {r: 1, g: 1, b: 1, a: 1}
+    dryColor: {r: 1, g: 1, b: 1, a: 1}
+    maxDensity: 1
+  - prototype: {fileID: 6601052348899811647, guid: ca7b709f99cc8994083ebb1bbfa2a4f8,
+      type: 3}
+    minWidth: 2
+    maxWidth: 3
+    minHeight: 2
+    maxHeight: 3
+    noiseSpread: 0.1
+    healthyColor: {r: 1, g: 1, b: 1, a: 1}
+    dryColor: {r: 1, g: 1, b: 1, a: 1}
+    maxDensity: 2
+  - prototype: {fileID: 6435149076381368683, guid: e8ef04ec02981c84bbf565847d6f40cd,
+      type: 3}
+    minWidth: 6
+    maxWidth: 8
+    minHeight: 6
+    maxHeight: 8
+    noiseSpread: 0.1
+    healthyColor: {r: 1, g: 1, b: 1, a: 1}
+    dryColor: {r: 1, g: 1, b: 1, a: 1}
+    maxDensity: 3
+  DetailWidth: 256
+  DetailHeight: 256
+  DetailResolutionPerPatch: 16
+  DetailLayers: {fileID: 4900000, guid: 1f8d1470dd19c7d4c9c53775255ab7bf, type: 3}

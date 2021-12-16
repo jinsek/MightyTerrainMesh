@@ -3,6 +3,8 @@
     using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
+    using KdTree;
+    using KdTree.Math;    
 
     public class SampleVertexData
     {
@@ -212,9 +214,15 @@
             new Dictionary<byte, List<SampleVertexData>>();
         public HashSet<byte> StitchedBorders = new HashSet<byte>();
         public Vector3 Center { get { return mNode.Pos; } }
+        public Bounds BND { get; set; }
+        public Vector2 uvMin = Vector2.zero;
+        public Vector2 uvMax = Vector2.one;
+        private Dictionary<byte, KdTree<float, int>> BoundaryKDTree = new Dictionary<byte, KdTree<float, int>>();
         public SamplerTree(int sub, Vector3 center, Vector2 size, Vector2 uv, Vector2 uvstep)
         {
             mNode = new SamplerNode(sub, center, size, uv, uvstep);
+            uvMin = uv - 0.5f * uvstep;
+            uvMax = uv + 0.5f * uvstep;
         }
         private void CombineTree(float angleErr)
         {
@@ -238,13 +246,45 @@
                 node.AddBoundary(subdivision, x, z, bk, vert);
             }
         }
+        public void InitBoundary()
+        {
+            for(byte flag = LBCorner; flag <= RBorder; ++flag)
+            {
+                Boundaries.Add(flag, new List<SampleVertexData>());
+                var tree = new KdTree<float, int>(2, new KdTree.Math.FloatMath());
+                BoundaryKDTree.Add(flag, tree);
+            }
+        }
+        public void MergeBoundary(byte flag, float minDis, List<SampleVertexData> src)
+        {
+            if (!Boundaries.ContainsKey(flag) || !BoundaryKDTree.ContainsKey(flag))
+            {
+                Debug.LogError("the boundary need to merge not exists");
+            }
+            var tree = BoundaryKDTree[flag];
+            foreach (var vt in src)
+            {
+                var nodes = tree.GetNearestNeighbours(new float[] { vt.Position.x, vt.Position.z }, 1);
+                if (nodes != null && nodes.Length > 0)
+                {
+                    var dis = Vector2.Distance(new Vector2(vt.Position.x, vt.Position.z), new Vector2(nodes[0].Point[0], nodes[0].Point[1]));
+                    if (dis <= minDis)
+                        continue;
+                }
+                tree.Add(new float[] { vt.Position.x, vt.Position.z }, 0);
+                Boundaries[flag].Add(vt);
+            }
+        }
         public void RunSampler(ITerrainTreeScaner scaner)
         {
             mNode.RunSample(scaner);
         }
         public void FillData(float angleErr)
         {
-            CombineTree(angleErr);
+            if (angleErr > 0)
+            {
+                CombineTree(angleErr);
+            }
             mNode.GetData(Vertices, Boundaries);
         }
         public void StitchBorder(byte flag, byte nflag, float minDis, SamplerTree neighbour)

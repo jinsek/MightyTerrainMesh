@@ -3,13 +3,14 @@
     using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
+
     public class MeshLODCreate
     {
         public int Subdivision = 3;
         public float SlopeAngleError = 5f;
     }
 
-    public class CreateDataJob
+    public class CreateMeshJob
     {
         public MTTerrainScanner[] LODs;
         private int curLodIdx = 0;
@@ -31,7 +32,7 @@
                 return 1;
             }
         }
-        public CreateDataJob(Bounds VolumnBound, int mx, int mz, MeshLODCreate[] setting)
+        public CreateMeshJob(Terrain t, Bounds VolumnBound, int mx, int mz, MeshLODCreate[] setting)
         {
             LODs = new MTTerrainScanner[setting.Length];
             for (int i = 0; i < setting.Length; ++i)
@@ -39,7 +40,7 @@
                 MeshLODCreate s = setting[i];
                 //only first lod stitch borders, other lod use the most detailed border to avoid 
                 //tearing on the border
-                LODs[i] = new MTTerrainScanner(VolumnBound, s.Subdivision, s.SlopeAngleError, mx, mz,
+                LODs[i] = new MTTerrainScanner(t, VolumnBound, s.Subdivision, s.SlopeAngleError, mx, mz,
                     i == 0);
             }
         }
@@ -73,6 +74,170 @@
         }
     }
 
+    public class CreateDataJob
+    {
+        public MTTerrainScanner[] LODs;
+        private float min_edge_len;
+        private int curLodIdx = 0;
+        public bool IsDone
+        {
+            get
+            {
+                return curLodIdx >= LODs.Length;
+            }
+        }
+        public float progress
+        {
+            get
+            {
+                if (curLodIdx < LODs.Length)
+                {
+                    return (curLodIdx + LODs[curLodIdx].progress) / LODs.Length;
+                }
+                return 1;
+            }
+        }
+        public CreateDataJob(Terrain t, Bounds VolumnBound, int depth, MeshLODCreate[] setting, float minEdge)
+        {
+            LODs = new MTTerrainScanner[setting.Length];
+            min_edge_len = minEdge;
+            int depth_stride = Mathf.Max(1, depth / setting.Length);
+            for (int i = 0; i < setting.Length; ++i)
+            {
+                var subdiv = setting[i].Subdivision;
+                var angleErr = setting[i].SlopeAngleError;
+                var sub_depth = Mathf.Max(1, depth - i * depth_stride);
+                int grid_count = 1 << sub_depth;
+                //use last lod stitch borders to avoid tearing on the border
+                LODs[i] = new MTTerrainScanner(t, VolumnBound, subdiv, angleErr, grid_count, grid_count, i == 0);
+            }
+        }
+        public void Update()
+        {
+            if (LODs == null || IsDone)
+                return;
+            LODs[curLodIdx].Update();
+            if (LODs[curLodIdx].IsDone)
+                ++curLodIdx;
+        }
+        public void EndProcess()
+        {
+            LODs[0].FillData();
+            for (int i = 1; i<LODs.Length; ++i)
+            {
+                //copy borders
+                MTTerrainScanner detail = LODs[i - 1];
+                MTTerrainScanner scaner = LODs[i];
+                foreach (var t in scaner.Trees)
+                {
+                    t.InitBoundary();
+                    //Debug.Log("start collect boundary : ");
+                    foreach (var dt in detail.Trees)
+                    {
+                        if (t.BND.Contains(dt.BND.center))
+                        {
+                            AddBoundaryFromDetail(t, dt, min_edge_len / 2f);
+                        }
+                    }
+                }
+                scaner.FillData();
+            }
+        }
+        private byte GetBorderType(Bounds container, Bounds child)
+        {
+            byte btype = byte.MaxValue;
+            float l_border = container.center.x - container.extents.x;
+            float r_border = container.center.x + container.extents.x;
+            float l_child_border = child.center.x - child.extents.x;
+            float r_child_border = child.center.x + child.extents.x;
+            if (Mathf.Abs(l_border - l_child_border) < 0.01f)
+                btype = SamplerTree.LBorder;
+            if (Mathf.Abs(r_border - r_child_border) < 0.01f)
+                btype = SamplerTree.RBorder;
+            float b_border = container.center.z - container.extents.z;
+            float t_border = container.center.z + container.extents.z;
+            float b_child_border = child.center.z - child.extents.z;
+            float t_child_border = child.center.z + child.extents.z;
+            if (Mathf.Abs(t_border - t_child_border) < 0.01f)
+            {
+                if (btype == SamplerTree.LBorder)
+                    btype = SamplerTree.LTCorner;
+                else if (btype == SamplerTree.RBorder)
+                    btype = SamplerTree.RTCorner;
+                else
+                    btype = SamplerTree.TBorder;
+            }
+            if (Mathf.Abs(b_border - b_child_border) < 0.01f)
+            {
+                if (btype == SamplerTree.LBorder)
+                    btype = SamplerTree.LBCorner;
+                else if (btype == SamplerTree.RBorder)
+                    btype = SamplerTree.RBCorner;
+                else
+                    btype = SamplerTree.BBorder;
+            }
+            return btype;
+        }
+        private void AddBoundaryFromDetail(SamplerTree container, SamplerTree detail, float minDis)
+        {
+            byte bt = GetBorderType(container.BND, detail.BND);
+            //Debug.Log("detail type : " + bt);
+            switch(bt)
+            {
+                case SamplerTree.LBorder:
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LTCorner]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LBorder]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LBCorner]);
+                    break;
+                case SamplerTree.LTCorner:
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.TBorder]);
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.RTCorner]);
+                    container.MergeBoundary(SamplerTree.LTCorner, minDis, detail.Boundaries[SamplerTree.LTCorner]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LBorder]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LBCorner]);
+                    break;
+                case SamplerTree.LBCorner:
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.BBorder]);
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.RBCorner]);
+                    container.MergeBoundary(SamplerTree.LBCorner, minDis, detail.Boundaries[SamplerTree.LBCorner]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LBorder]);
+                    container.MergeBoundary(SamplerTree.LBorder, minDis, detail.Boundaries[SamplerTree.LTCorner]);
+                    break;
+                case SamplerTree.BBorder:
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.BBorder]);
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.LBCorner]);
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.RBCorner]);
+                    break;
+                case SamplerTree.RBCorner:
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.BBorder]);
+                    container.MergeBoundary(SamplerTree.BBorder, minDis, detail.Boundaries[SamplerTree.LBCorner]);
+                    container.MergeBoundary(SamplerTree.RBCorner, minDis, detail.Boundaries[SamplerTree.RBCorner]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RBorder]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RTCorner]);
+                    break;
+                case SamplerTree.RBorder:
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RTCorner]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RBorder]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RBCorner]);
+                    break;
+                case SamplerTree.RTCorner:
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.TBorder]);
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.LTCorner]);
+                    container.MergeBoundary(SamplerTree.RTCorner, minDis, detail.Boundaries[SamplerTree.RTCorner]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RBorder]);
+                    container.MergeBoundary(SamplerTree.RBorder, minDis, detail.Boundaries[SamplerTree.RBCorner]);
+                    break;
+                case SamplerTree.TBorder:
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.RTCorner]);
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.TBorder]);
+                    container.MergeBoundary(SamplerTree.TBorder, minDis, detail.Boundaries[SamplerTree.LTCorner]);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     public class MTTerrainScanner : ITerrainTreeScaner
     {
         public int maxX { get; private set; }
@@ -80,13 +245,11 @@
         public int subdivision { get; private set; }
         public float slopeAngleErr { get; private set; }
         public Vector2 gridSize { get; private set; }
+        public int detailedSize = 1;
         public SamplerTree[] Trees { get; private set; }
-        public Vector3 center { get; private set; }
-        private Vector3 vCheckTop = Vector3.one;
-        private float CheckRayLen = 0;
+        public Vector3 center { get { return volBnd.center; } }
         private int curXIdx = 0;
         private int curZIdx = 0;
-        private int detailedSize = 1;
         private bool stitchBorder = true;
         public bool IsDone
         {
@@ -102,19 +265,23 @@
                 return (float)(curXIdx + curZIdx * maxX) / (float)(maxX * maxZ);
             }
         }
-        public MTTerrainScanner(Bounds VolumnBound, int sub, float angleErr, int mx, int mz, bool sbrd)
+        private Bounds volBnd;
+        private Terrain terrain;
+        private Vector3 check_start;
+        public MTTerrainScanner(Terrain t, Bounds VolumnBound, int sub, float angleErr, int mx, int mz, bool sbrd)
         {
+            terrain = t;
+            volBnd = VolumnBound;
             maxX = mx;
             maxZ = mz;
             subdivision = Mathf.Max(1, sub);
-            slopeAngleErr = Mathf.Max(0.1f, angleErr);
+            slopeAngleErr = angleErr;
             stitchBorder = sbrd;
-            center = VolumnBound.center;
             gridSize = new Vector2(VolumnBound.size.x / mx, VolumnBound.size.z / mz);
-            vCheckTop = new Vector3(VolumnBound.center.x - VolumnBound.size.x / 2,
+
+            check_start = new Vector3(VolumnBound.center.x - VolumnBound.size.x / 2,
                  VolumnBound.center.y + VolumnBound.size.y / 2,
-                VolumnBound.center.z - VolumnBound.size.z / 2);
-            CheckRayLen = VolumnBound.size.y * 1.1f;
+                 VolumnBound.center.z - VolumnBound.size.z / 2);
             //
             detailedSize = 1 << subdivision;
             //
@@ -129,17 +296,10 @@
         void ITerrainTreeScaner.Run(Vector3 center, out Vector3 hitpos, out Vector3 hitnormal)
         {
             hitpos = center;
-            hitnormal = Vector3.up;
-            RaycastHit hit = new RaycastHit();
-            if (Physics.Raycast(center, Vector3.down, out hit, CheckRayLen))
-            {
-                hitpos = hit.point;
-                hitnormal = hit.normal;
-            }
-            else
-            {
-                MTLog.LogError("scan didn't hit terrain");
-            }
+            float fx = (center.x - volBnd.min.x) / volBnd.size.x;
+            float fy = (center.z - volBnd.min.z) / volBnd.size.z;
+            hitpos.y = terrain.SampleHeight(center) + terrain.gameObject.transform.position.y;
+            hitnormal = terrain.terrainData.GetInterpolatedNormal(fx, fy);
         }
         private void ScanTree(SamplerTree sampler)
         {
@@ -153,7 +313,7 @@
             float bfz = curZIdx * gridSize[1];
             float borderOffset = 0;
             if (curXIdx == 0 || curZIdx == 0 || curXIdx == maxX - 1 || curZIdx == maxZ - 1)
-                borderOffset = 0.01f;
+                borderOffset = 0.000001f;
             RayCastBoundary(bfx + borderOffset, bfz + borderOffset,
                 detailedX, detailedZ, SamplerTree.LBCorner, sampler);
             RayCastBoundary(bfx + borderOffset, bfz + gridSize[1] - borderOffset,
@@ -179,20 +339,20 @@
         }
         private void RayCastBoundary(float fx, float fz, int x, int z, byte bk, SamplerTree sampler)
         {
-            Vector3 top = vCheckTop + fx * Vector3.right + fz * Vector3.forward;
-            RaycastHit hit = new RaycastHit();
-            if (Physics.Raycast(top, Vector3.down, out hit, CheckRayLen))
-            {
-                SampleVertexData vert = new SampleVertexData();
-                vert.Position = hit.point;
-                vert.Normal = hit.normal;
-                vert.UV = new Vector2(fx / maxX / gridSize[0], fz / maxZ / gridSize[1]);
-                sampler.AddBoundary(subdivision, x, z, bk, vert);
-            }
-            else
-            {
-                MTLog.LogError("RayCastBoundary didn't hit terrain");
-            }
+            Vector3 hitpos = check_start + fx * Vector3.right + fz * Vector3.forward;
+            hitpos.x = Mathf.Clamp(hitpos.x, volBnd.min.x, volBnd.max.x);
+            hitpos.z = Mathf.Clamp(hitpos.z, volBnd.min.z, volBnd.max.z);
+
+            float local_x = (hitpos.x - volBnd.min.x) / volBnd.size.x;
+            float local_y = (hitpos.z - volBnd.min.z) / volBnd.size.z;
+            hitpos.y = terrain.SampleHeight(hitpos) + terrain.gameObject.transform.position.y;
+            var hitnormal = terrain.terrainData.GetInterpolatedNormal(local_x, local_y);
+
+            SampleVertexData vert = new SampleVertexData();
+            vert.Position = hitpos;
+            vert.Normal = hitnormal;
+            vert.UV = new Vector2(fx / maxX / gridSize[0], fz / maxZ / gridSize[1]);
+            sampler.AddBoundary(subdivision, x, z, bk, vert);
         }
         public void Update()
         {
@@ -200,11 +360,15 @@
                 return;
             float fx = (curXIdx + 0.5f) * gridSize[0];
             float fz = (curZIdx + 0.5f) * gridSize[1];
-            Vector3 center = vCheckTop + fx * Vector3.right + fz * Vector3.forward;
+            Vector3 center = check_start + fx * Vector3.right + fz * Vector3.forward;
             Vector2 uv = new Vector2((curXIdx + 0.5f) / maxX, (curZIdx + 0.5f) / maxZ);
             Vector2 uvstep = new Vector2(1f / maxX, 1f / maxZ);
             if (Trees[curXIdx * maxZ + curZIdx] == null)
-                Trees[curXIdx * maxZ + curZIdx] = new SamplerTree(subdivision, center, gridSize, uv, uvstep);
+            {
+                var t = new SamplerTree(subdivision, center, gridSize, uv, uvstep);
+                t.BND = new Bounds(new Vector3(center.x, center.y, center.z), new Vector3(gridSize.x, volBnd.size.y / 2, gridSize.y));
+                Trees[curXIdx * maxZ + curZIdx] = t;
+            }
             ScanTree(Trees[curXIdx * maxZ + curZIdx]);
             //update idx
             ++curXIdx;

@@ -2,35 +2,83 @@
 {
     using System.Collections;
     using System.Collections.Generic;
+    using System;
+    using System.IO;
     using UnityEngine;
 
-    public class MTMeshHeader
+    public static class MTMeshUtils
     {
-        public int MeshID { get; private set; }
-        public Vector3 Center { get; private set; }
-        public MTMeshHeader(int id, Vector3 c)
+        public static void Serialize(Stream stream, MTMeshData.LOD lod)
         {
-            MeshID = id;
-            Center = c;
+            MTFileUtils.WriteVector2(stream, lod.uvmin);
+            MTFileUtils.WriteVector2(stream, lod.uvmax);
+            //vertices
+            byte[] uBuff = BitConverter.GetBytes(lod.vertices.Length);
+            stream.Write(uBuff, 0, uBuff.Length);
+            foreach (var v in lod.vertices)
+                MTFileUtils.WriteVector3(stream, v);
+            //normals
+            uBuff = BitConverter.GetBytes(lod.normals.Length);
+            stream.Write(uBuff, 0, uBuff.Length);
+            foreach (var n in lod.normals)
+                MTFileUtils.WriteVector3(stream, n);
+            //uvs
+            uBuff = BitConverter.GetBytes(lod.uvs.Length);
+            stream.Write(uBuff, 0, uBuff.Length);
+            foreach (var uv in lod.uvs)
+                MTFileUtils.WriteVector2(stream, uv);
+            //faces
+            uBuff = BitConverter.GetBytes(lod.faces.Length);
+            stream.Write(uBuff, 0, uBuff.Length);
+            foreach (var face in lod.faces)
+            {
+                //强转为ushort
+                ushort val = (ushort)face;
+                uBuff = BitConverter.GetBytes(val);
+                stream.Write(uBuff, 0, uBuff.Length);
+            }
+        }
+        public static void Deserialize(Stream stream, MTRenderMesh rm)
+        {
+            rm.mesh = new Mesh();
+            rm.uvmin = MTFileUtils.ReadVector2(stream);
+            rm.uvmax = MTFileUtils.ReadVector2(stream);
+            //vertices
+            List<Vector3> vec3Cache = new List<Vector3>();
+            byte[] nBuff = new byte[sizeof(int)];
+            stream.Read(nBuff, 0, sizeof(int));
+            int len = BitConverter.ToInt32(nBuff, 0);
+            for (int i = 0; i < len; ++i)
+                vec3Cache.Add(MTFileUtils.ReadVector3(stream));
+            rm.mesh.SetVertices(vec3Cache.ToArray());
+            //normals
+            vec3Cache.Clear();
+            stream.Read(nBuff, 0, sizeof(int));
+            len = BitConverter.ToInt32(nBuff, 0);
+            for (int i = 0; i < len; ++i)
+                vec3Cache.Add(MTFileUtils.ReadVector3(stream));
+            rm.mesh.SetNormals(vec3Cache.ToArray());
+            //uvs
+            List<Vector2> vec2Cache = new List<Vector2>();
+            stream.Read(nBuff, 0, sizeof(int));
+            len = BitConverter.ToInt32(nBuff, 0);
+            for (int i = 0; i < len; ++i)
+                vec2Cache.Add(MTFileUtils.ReadVector2(stream));
+            rm.mesh.SetUVs(0, vec2Cache.ToArray());
+            //faces
+            List<int> intCache = new List<int>();
+            stream.Read(nBuff, 0, sizeof(int));
+            len = BitConverter.ToInt32(nBuff, 0);
+            byte[] fBuff = new byte[sizeof(ushort)];
+            for (int i = 0; i < len; ++i)
+            {
+                stream.Read(fBuff, 0, sizeof(ushort));
+                intCache.Add(BitConverter.ToUInt16(fBuff, 0));
+            }
+            rm.mesh.SetTriangles(intCache.ToArray(), 0);
         }
     }
-
-    public class MTQuadTreeHeader
-    {
-        public int QuadTreeDepth = 0;
-        public Vector3 BoundMin = Vector3.zero;
-        public Vector3 BoundMax = Vector3.zero;
-        public int LOD = 1;
-        public string DataName { get; private set; }
-        public Dictionary<int, MTMeshHeader> Meshes = new Dictionary<int, MTMeshHeader>();
-        //runtime materials
-        public Material[] RuntimeMats;
-        public MTQuadTreeHeader(string name)
-        {
-            DataName = name;
-        }
-    }
-
+        
     public class MTMeshData
     {
         public class LOD
@@ -39,85 +87,24 @@
             public Vector3[] normals;
             public Vector2[] uvs;
             public int[] faces;
+            public Vector2 uvmin;
+            public Vector2 uvmax;
         }
         public int meshId { get; private set; }
-        public Vector3 center { get; private set; }
+        public Bounds BND { get; private set; }
         public LOD[] lods;
-        public MTMeshData(int id, Vector3 c)
+        public int lodLv = -1;
+        public MTMeshData(int id, Bounds bnd)
         {
             meshId = id;
-            center = c;
+            BND = bnd;
+        }
+        public MTMeshData(int id, Bounds bnd, int lv)
+        {
+            meshId = id;
+            BND = bnd;
+            lodLv = lv;
         }
     }
 
-    public class MTQuadTreeNode
-    {
-        public Bounds Bound { get; private set; }
-        public int MeshID { get; private set; }
-        protected MTQuadTreeNode[] mSubNode;
-        public MTQuadTreeNode(int depth, Vector3 min, Vector3 max)
-        {
-            Vector3 center = 0.5f * (min + max);
-            Vector3 size = max - min;
-            Bound = new Bounds(center, size);
-            if (depth > 0)
-            {
-                mSubNode = new MTQuadTreeNode[4];
-                Vector3 subMin = new Vector3(center.x - 0.5f * size.x, min.y, center.z - 0.5f * size.z);
-                Vector3 subMax = new Vector3(center.x, max.y, center.z);
-                mSubNode[0] = new MTQuadTreeNode(depth - 1, subMin, subMax);
-                subMin = new Vector3(center.x, min.y, center.z - 0.5f * size.z);
-                subMax = new Vector3(center.x + 0.5f * size.x, max.y, center.z);
-                mSubNode[1] = new MTQuadTreeNode(depth - 1, subMin, subMax);
-                subMin = new Vector3(center.x - 0.5f * size.x, min.y, center.z);
-                subMax = new Vector3(center.x, max.y, center.z + 0.5f * size.z);
-                mSubNode[2] = new MTQuadTreeNode(depth - 1, subMin, subMax);
-                subMin = new Vector3(center.x, min.y, center.z);
-                subMax = new Vector3(center.x + 0.5f * size.x, max.y, center.z + 0.5f * size.z);
-                mSubNode[3] = new MTQuadTreeNode(depth - 1, subMin, subMax);
-            }
-        }
-        public void RetrieveVisibleMesh(Plane[] planes, Vector3 viewCenter, float[] lodPolicy, MTArray<uint> visible)
-        {
-            if (GeometryUtility.TestPlanesAABB(planes, Bound))
-            {
-                if (mSubNode == null)
-                {
-                    float distance = Vector3.Distance(viewCenter, Bound.center);
-                    for (uint lod=0; lod<lodPolicy.Length; ++lod)
-                    {
-                        if (distance <= lodPolicy[lod])
-                        {
-                            uint patchId = (uint)MeshID;
-                            patchId <<= 2;
-                            patchId |= lod;
-                            visible.Add(patchId);
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < 4; ++i)
-                    {
-                        mSubNode[i].RetrieveVisibleMesh(planes, viewCenter, lodPolicy, visible);
-                    }
-                }
-            }
-        }
-        public void AddMesh(MTMeshHeader meshh)
-        {
-            if (mSubNode == null && Bound.Contains(meshh.Center))
-            {
-                MeshID = meshh.MeshID;
-            }
-            else if (mSubNode != null)
-            {
-                for (int i = 0; i < 4; ++i)
-                {
-                    mSubNode[i].AddMesh(meshh);
-                }
-            }
-        }
-    }
 }
