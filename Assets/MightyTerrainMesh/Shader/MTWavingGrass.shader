@@ -45,6 +45,7 @@ Shader "MT/WavingGrass"
 			//--------------------------------------
 			// GPU Instancing
 			#pragma multi_compile_instancing
+			#pragma instancing_options renderinglayer
 			///////////my defined
 			#pragma multi_compile _ FORCE_UP_NORMAL
 			#pragma multi_compile _ INTERACTIVE
