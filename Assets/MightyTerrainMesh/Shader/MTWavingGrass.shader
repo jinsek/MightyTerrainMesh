@@ -81,7 +81,7 @@ Shader "MT/WavingGrass"
 
 				float2 uv = input.uv;
 				half4 diffuseAlpha = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_MainTex, sampler_MainTex));
-				half3 diffuse = diffuseAlpha.rgb * input.color.rgb * perInstance_c.xyz * _WavingTint.rgb;
+				half3 diffuse = diffuseAlpha.rgb * perInstance_c.xyz * _WavingTint.rgb;
 
 				half alpha = diffuseAlpha.a;
 				AlphaDiscard(alpha, _Cutoff);
@@ -93,43 +93,12 @@ Shader "MT/WavingGrass"
 
 				InputData inputData;
 				InitializeInputData(input, inputData);
-
-				half4 color = UniversalFragmentBlinnPhong(inputData, diffuse, specularGloss, shininess, emission, alpha);
+				half3 normalTS = 0.0;
+				half4 color = UniversalFragmentBlinnPhong(inputData, diffuse, specularGloss, shininess, emission, alpha, normalTS);
 				color.rgb = MixFog(color.rgb, inputData.fogCoord);
 				return color;
 			}
 			ENDHLSL
 		}
-
-        Pass
-        {
-            Tags{"LightMode" = "DepthOnly"}
-
-            ZWrite On
-            ColorMask 0
-            Cull Off
-
-            HLSLPROGRAM
-            // Required to compile gles 2.0 with standard srp library
-            #pragma prefer_hlslcc gles
-            #pragma exclude_renderers d3d11_9x
-            #pragma target 2.0
-
-            #pragma vertex DepthOnlyVertex
-            #pragma fragment DepthOnlyFragment
-
-            // -------------------------------------
-            // Material Keywords
-            #define _ALPHATEST_ON
-            #pragma shader_feature _GLOSSINESS_FROM_BASE_ALPHA
-
-            //--------------------------------------
-            // GPU Instancing
-            #pragma multi_compile_instancing
-
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/Terrain/WavingGrassInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/Terrain/WavingGrassPasses.hlsl"
-            ENDHLSL
-        }
     }
 }

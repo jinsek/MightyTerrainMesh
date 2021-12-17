@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 0.5
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 984039097}
-  m_IndirectSpecularColor: {r: 0.16280542, g: 0.18489479, b: 0.4144144, a: 0.5}
+  m_IndirectSpecularColor: {r: 0.121802524, g: 0.13291708, b: 0.39234623, a: 0.5}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -97,7 +97,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000068, guid: 2c8fd91b453d8704d9149cce1e91d67a,
+  m_LightingDataAsset: {fileID: 112000000, guid: cd117e4357958684fb03fc80e156dbd5,
     type: 2}
   m_LightingSettings: {fileID: 4890085278179872738, guid: 11684ea13faccde4da9c848a541b9d82,
     type: 2}
@@ -591,6 +591,7 @@ GameObject:
   m_Component:
   - component: {fileID: 984039098}
   - component: {fileID: 984039097}
+  - component: {fileID: 984039099}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -670,10 +671,31 @@ Transform:
   m_LocalRotation: {x: -0.175167, y: -0.513674, z: 0.23765187, w: -0.8055911}
   m_LocalPosition: {x: 584.8, y: 262.1, z: 25.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 31.761002, y: -298.9, z: -13.809001}
+--- !u!114 &984039099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 984039096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Version: 1
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_LightLayerMask: 1
+  m_CustomShadowLayers: 0
+  m_ShadowLayerMask: 1
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
 --- !u!1001 &1004764521
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1047,7 +1069,7 @@ ReflectionProbe:
   m_Enabled: 1
   serializedVersion: 2
   m_Type: 0
-  m_Mode: 1
+  m_Mode: 0
   m_RefreshMode: 0
   m_TimeSlicingMode: 0
   m_Resolution: 256
@@ -1080,6 +1102,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1250, y: 0, z: 1250}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -1287,6 +1310,7 @@ Transform:
   m_LocalRotation: {x: -0.045640767, y: 0.42276987, z: -0.021324307, w: -0.9048358}
   m_LocalPosition: {x: 916.3451, y: 6.4915676, z: -677.1662}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1

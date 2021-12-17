@@ -11,3 +11,4 @@ Unity.RenderPipeline.Universal.ShaderLibrary.csproj
 Unity.RenderPipelines.Universal.Editor.csproj
 Unity.RenderPipelines.Universal.Runtime.csproj
 Unity.RenderPipelines.Universal.Shaders.csproj
+Logs/
