@@ -12,3 +12,5 @@ Unity.RenderPipelines.Universal.Editor.csproj
 Unity.RenderPipelines.Universal.Runtime.csproj
 Unity.RenderPipelines.Universal.Shaders.csproj
 Logs/
+ProjectSettings/BurstAotSettings_Android.json
+ProjectSettings/CommonBurstAotSettings.json
