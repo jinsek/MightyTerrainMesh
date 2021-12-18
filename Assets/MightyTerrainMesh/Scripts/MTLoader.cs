@@ -4,6 +4,7 @@
     using System.IO;
     using System.Collections.Generic;
     using UnityEngine;
+    using UnityEngine.Rendering;
 
     internal class MTRuntimeMeshPool
     {
@@ -144,9 +145,9 @@
             prevWorld2Cam = Matrix4x4.identity;
             projM = Matrix4x4.Perspective(cullCamera.fieldOfView, cullCamera.aspect, cullCamera.nearClipPlane, cullCamera.farClipPlane);
             detailProjM = Matrix4x4.Perspective(cullCamera.fieldOfView, cullCamera.aspect, cullCamera.nearClipPlane, detailDrawDistance);
+            RenderPipelineManager.beginFrameRendering += OnFrameRendering;
         }
-        // Update is called once per frame
-        void Update()
+        void OnFrameRendering(ScriptableRenderContext context, Camera[] cameras)
         {
             if (quadtree != null && cullCamera != null)
             {
@@ -183,6 +184,7 @@
         }
         private void OnDestroy()
         {
+            RenderPipelineManager.beginFrameRendering -= OnFrameRendering;
             detailRenderer.Clear();
             meshPool.Clear();
             MTPooledRenderMesh.Clear();

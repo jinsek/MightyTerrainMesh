@@ -55,6 +55,7 @@
             mGo = new GameObject("_mtpatch");
             mMesh = mGo.AddComponent<MeshFilter>();
             mRenderer = mGo.AddComponent<MeshRenderer>();
+            mRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
         public void Reset(MTData header, IVTCreator vtCreator, MTRenderMesh m, Vector3 offset)
         {

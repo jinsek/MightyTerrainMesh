@@ -1,0 +1,932 @@
+fileFormatVersion: 2
+guid: 52ad55bee0260b64da664da407ed38b4
+ModelImporter:
+  serializedVersion: 21202
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: arm2
+  - first:
+      1: 100002
+    second: arm2 1
+  - first:
+      1: 100004
+    second: arm2 2
+  - first:
+      1: 100006
+    second: ballJoint1
+  - first:
+      1: 100008
+    second: ballJoint1 1
+  - first:
+      1: 100010
+    second: ballJoint1 2
+  - first:
+      1: 100012
+    second: ballJoint2
+  - first:
+      1: 100014
+    second: ballJoint2 1
+  - first:
+      1: 100016
+    second: ballJoint2 2
+  - first:
+      1: 100018
+    second: body
+  - first:
+      1: 100020
+    second: bolt1
+  - first:
+      1: 100022
+    second: bolt1 1
+  - first:
+      1: 100024
+    second: bolt1 2
+  - first:
+      1: 100026
+    second: bolt2
+  - first:
+      1: 100028
+    second: bolt2 1
+  - first:
+      1: 100030
+    second: bolt2 2
+  - first:
+      1: 100032
+    second: bolt3
+  - first:
+      1: 100034
+    second: bolt3 1
+  - first:
+      1: 100036
+    second: bolt3 2
+  - first:
+      1: 100038
+    second: bolt4
+  - first:
+      1: 100040
+    second: bolt4 1
+  - first:
+      1: 100042
+    second: bolt4 2
+  - first:
+      1: 100044
+    second: bolt5
+  - first:
+      1: 100046
+    second: bolt5 1
+  - first:
+      1: 100048
+    second: bolt5 2
+  - first:
+      1: 100050
+    second: bolt6
+  - first:
+      1: 100052
+    second: bolt6 1
+  - first:
+      1: 100054
+    second: bolt6 2
+  - first:
+      1: 100056
+    second: bolt7
+  - first:
+      1: 100058
+    second: bolt7 1
+  - first:
+      1: 100060
+    second: bolt7 2
+  - first:
+      1: 100062
+    second: bolt8
+  - first:
+      1: 100064
+    second: bolt8 1
+  - first:
+      1: 100066
+    second: bolt8 2
+  - first:
+      1: 100068
+    second: eyeDome
+  - first:
+      1: 100070
+    second: eyeDome1
+  - first:
+      1: 100072
+    second: eyeLid
+  - first:
+      1: 100074
+    second: eyes_manip
+  - first:
+      1: 100076
+    second: eyesVisor_manip
+  - first:
+      1: 100078
+    second: ikHandle1
+  - first:
+      1: 100080
+    second: ikHandle2
+  - first:
+      1: 100082
+    second: ikHandle3
+  - first:
+      1: 100084
+    second: l_eye
+  - first:
+      1: 100086
+    second: l_eye_manip
+  - first:
+      1: 100088
+    second: left_arm
+  - first:
+      1: 100090
+    second: left_arm_end
+  - first:
+      1: 100092
+    second: left_arm_jt
+  - first:
+      1: 100094
+    second: left_elbow_jt
+  - first:
+      1: 100096
+    second: left_plate
+  - first:
+      1: 100098
+    second: lookingAt_manip
+  - first:
+      1: 100100
+    second: main_jt
+  - first:
+      1: 100102
+    second: r_eye
+  - first:
+      1: 100104
+    second: r_eye_manip
+  - first:
+      1: 100106
+    second: rear_arm
+  - first:
+      1: 100108
+    second: rear_arm_end
+  - first:
+      1: 100110
+    second: rear_arm_jt
+  - first:
+      1: 100112
+    second: rear_elbow_jt
+  - first:
+      1: 100114
+    second: rear_plate
+  - first:
+      1: 100116
+    second: right_arm
+  - first:
+      1: 100118
+    second: right_arm_end
+  - first:
+      1: 100120
+    second: right_arm_jt
+  - first:
+      1: 100122
+    second: right_elbow_jt
+  - first:
+      1: 100124
+    second: right_plate
+  - first:
+      1: 100126
+    second: //RootNode
+  - first:
+      4: 400000
+    second: arm2
+  - first:
+      4: 400002
+    second: arm2 1
+  - first:
+      4: 400004
+    second: arm2 2
+  - first:
+      4: 400006
+    second: ballJoint1
+  - first:
+      4: 400008
+    second: ballJoint1 1
+  - first:
+      4: 400010
+    second: ballJoint1 2
+  - first:
+      4: 400012
+    second: ballJoint2
+  - first:
+      4: 400014
+    second: ballJoint2 1
+  - first:
+      4: 400016
+    second: ballJoint2 2
+  - first:
+      4: 400018
+    second: body
+  - first:
+      4: 400020
+    second: bolt1
+  - first:
+      4: 400022
+    second: bolt1 1
+  - first:
+      4: 400024
+    second: bolt1 2
+  - first:
+      4: 400026
+    second: bolt2
+  - first:
+      4: 400028
+    second: bolt2 1
+  - first:
+      4: 400030
+    second: bolt2 2
+  - first:
+      4: 400032
+    second: bolt3
+  - first:
+      4: 400034
+    second: bolt3 1
+  - first:
+      4: 400036
+    second: bolt3 2
+  - first:
+      4: 400038
+    second: bolt4
+  - first:
+      4: 400040
+    second: bolt4 1
+  - first:
+      4: 400042
+    second: bolt4 2
+  - first:
+      4: 400044
+    second: bolt5
+  - first:
+      4: 400046
+    second: bolt5 1
+  - first:
+      4: 400048
+    second: bolt5 2
+  - first:
+      4: 400050
+    second: bolt6
+  - first:
+      4: 400052
+    second: bolt6 1
+  - first:
+      4: 400054
+    second: bolt6 2
+  - first:
+      4: 400056
+    second: bolt7
+  - first:
+      4: 400058
+    second: bolt7 1
+  - first:
+      4: 400060
+    second: bolt7 2
+  - first:
+      4: 400062
+    second: bolt8
+  - first:
+      4: 400064
+    second: bolt8 1
+  - first:
+      4: 400066
+    second: bolt8 2
+  - first:
+      4: 400068
+    second: eyeDome
+  - first:
+      4: 400070
+    second: eyeDome1
+  - first:
+      4: 400072
+    second: eyeLid
+  - first:
+      4: 400074
+    second: eyes_manip
+  - first:
+      4: 400076
+    second: eyesVisor_manip
+  - first:
+      4: 400078
+    second: ikHandle1
+  - first:
+      4: 400080
+    second: ikHandle2
+  - first:
+      4: 400082
+    second: ikHandle3
+  - first:
+      4: 400084
+    second: l_eye
+  - first:
+      4: 400086
+    second: l_eye_manip
+  - first:
+      4: 400088
+    second: left_arm
+  - first:
+      4: 400090
+    second: left_arm_end
+  - first:
+      4: 400092
+    second: left_arm_jt
+  - first:
+      4: 400094
+    second: left_elbow_jt
+  - first:
+      4: 400096
+    second: left_plate
+  - first:
+      4: 400098
+    second: lookingAt_manip
+  - first:
+      4: 400100
+    second: main_jt
+  - first:
+      4: 400102
+    second: r_eye
+  - first:
+      4: 400104
+    second: r_eye_manip
+  - first:
+      4: 400106
+    second: rear_arm
+  - first:
+      4: 400108
+    second: rear_arm_end
+  - first:
+      4: 400110
+    second: rear_arm_jt
+  - first:
+      4: 400112
+    second: rear_elbow_jt
+  - first:
+      4: 400114
+    second: rear_plate
+  - first:
+      4: 400116
+    second: right_arm
+  - first:
+      4: 400118
+    second: right_arm_end
+  - first:
+      4: 400120
+    second: right_arm_jt
+  - first:
+      4: 400122
+    second: right_elbow_jt
+  - first:
+      4: 400124
+    second: right_plate
+  - first:
+      4: 400126
+    second: //RootNode
+  - first:
+      21: 2100000
+    second: lambert1
+  - first:
+      23: 2300000
+    second: arm2
+  - first:
+      23: 2300002
+    second: arm2 1
+  - first:
+      23: 2300004
+    second: arm2 2
+  - first:
+      23: 2300006
+    second: ballJoint1
+  - first:
+      23: 2300008
+    second: ballJoint1 1
+  - first:
+      23: 2300010
+    second: ballJoint1 2
+  - first:
+      23: 2300012
+    second: ballJoint2
+  - first:
+      23: 2300014
+    second: ballJoint2 1
+  - first:
+      23: 2300016
+    second: ballJoint2 2
+  - first:
+      23: 2300018
+    second: body
+  - first:
+      23: 2300020
+    second: bolt1
+  - first:
+      23: 2300022
+    second: bolt1 1
+  - first:
+      23: 2300024
+    second: bolt1 2
+  - first:
+      23: 2300026
+    second: bolt2
+  - first:
+      23: 2300028
+    second: bolt2 1
+  - first:
+      23: 2300030
+    second: bolt2 2
+  - first:
+      23: 2300032
+    second: bolt3
+  - first:
+      23: 2300034
+    second: bolt3 1
+  - first:
+      23: 2300036
+    second: bolt3 2
+  - first:
+      23: 2300038
+    second: bolt4
+  - first:
+      23: 2300040
+    second: bolt4 1
+  - first:
+      23: 2300042
+    second: bolt4 2
+  - first:
+      23: 2300044
+    second: bolt5
+  - first:
+      23: 2300046
+    second: bolt5 1
+  - first:
+      23: 2300048
+    second: bolt5 2
+  - first:
+      23: 2300050
+    second: bolt6
+  - first:
+      23: 2300052
+    second: bolt6 1
+  - first:
+      23: 2300054
+    second: bolt6 2
+  - first:
+      23: 2300056
+    second: bolt7
+  - first:
+      23: 2300058
+    second: bolt7 1
+  - first:
+      23: 2300060
+    second: bolt7 2
+  - first:
+      23: 2300062
+    second: bolt8
+  - first:
+      23: 2300064
+    second: bolt8 1
+  - first:
+      23: 2300066
+    second: bolt8 2
+  - first:
+      23: 2300068
+    second: eyeDome
+  - first:
+      23: 2300070
+    second: eyeDome1
+  - first:
+      23: 2300072
+    second: eyeLid
+  - first:
+      23: 2300074
+    second: l_eye
+  - first:
+      23: 2300076
+    second: left_arm
+  - first:
+      23: 2300078
+    second: left_plate
+  - first:
+      23: 2300080
+    second: r_eye
+  - first:
+      23: 2300082
+    second: rear_arm
+  - first:
+      23: 2300084
+    second: rear_plate
+  - first:
+      23: 2300086
+    second: right_arm
+  - first:
+      23: 2300088
+    second: right_plate
+  - first:
+      33: 3300000
+    second: arm2
+  - first:
+      33: 3300002
+    second: arm2 1
+  - first:
+      33: 3300004
+    second: arm2 2
+  - first:
+      33: 3300006
+    second: ballJoint1
+  - first:
+      33: 3300008
+    second: ballJoint1 1
+  - first:
+      33: 3300010
+    second: ballJoint1 2
+  - first:
+      33: 3300012
+    second: ballJoint2
+  - first:
+      33: 3300014
+    second: ballJoint2 1
+  - first:
+      33: 3300016
+    second: ballJoint2 2
+  - first:
+      33: 3300018
+    second: body
+  - first:
+      33: 3300020
+    second: bolt1
+  - first:
+      33: 3300022
+    second: bolt1 1
+  - first:
+      33: 3300024
+    second: bolt1 2
+  - first:
+      33: 3300026
+    second: bolt2
+  - first:
+      33: 3300028
+    second: bolt2 1
+  - first:
+      33: 3300030
+    second: bolt2 2
+  - first:
+      33: 3300032
+    second: bolt3
+  - first:
+      33: 3300034
+    second: bolt3 1
+  - first:
+      33: 3300036
+    second: bolt3 2
+  - first:
+      33: 3300038
+    second: bolt4
+  - first:
+      33: 3300040
+    second: bolt4 1
+  - first:
+      33: 3300042
+    second: bolt4 2
+  - first:
+      33: 3300044
+    second: bolt5
+  - first:
+      33: 3300046
+    second: bolt5 1
+  - first:
+      33: 3300048
+    second: bolt5 2
+  - first:
+      33: 3300050
+    second: bolt6
+  - first:
+      33: 3300052
+    second: bolt6 1
+  - first:
+      33: 3300054
+    second: bolt6 2
+  - first:
+      33: 3300056
+    second: bolt7
+  - first:
+      33: 3300058
+    second: bolt7 1
+  - first:
+      33: 3300060
+    second: bolt7 2
+  - first:
+      33: 3300062
+    second: bolt8
+  - first:
+      33: 3300064
+    second: bolt8 1
+  - first:
+      33: 3300066
+    second: bolt8 2
+  - first:
+      33: 3300068
+    second: eyeDome
+  - first:
+      33: 3300070
+    second: eyeDome1
+  - first:
+      33: 3300072
+    second: eyeLid
+  - first:
+      33: 3300074
+    second: l_eye
+  - first:
+      33: 3300076
+    second: left_arm
+  - first:
+      33: 3300078
+    second: left_plate
+  - first:
+      33: 3300080
+    second: r_eye
+  - first:
+      33: 3300082
+    second: rear_arm
+  - first:
+      33: 3300084
+    second: rear_plate
+  - first:
+      33: 3300086
+    second: right_arm
+  - first:
+      33: 3300088
+    second: right_plate
+  - first:
+      43: 4300000
+    second: arm2
+  - first:
+      43: 4300002
+    second: bolt7
+  - first:
+      43: 4300004
+    second: bolt5
+  - first:
+      43: 4300006
+    second: bolt8
+  - first:
+      43: 4300008
+    second: bolt6
+  - first:
+      43: 4300010
+    second: rear_plate
+  - first:
+      43: 4300012
+    second: rear_arm
+  - first:
+      43: 4300014
+    second: bolt3
+  - first:
+      43: 4300016
+    second: bolt1
+  - first:
+      43: 4300018
+    second: bolt4
+  - first:
+      43: 4300020
+    second: bolt2
+  - first:
+      43: 4300022
+    second: ballJoint1
+  - first:
+      43: 4300024
+    second: ballJoint2
+  - first:
+      43: 4300026
+    second: arm2
+  - first:
+      43: 4300028
+    second: bolt7
+  - first:
+      43: 4300030
+    second: bolt5
+  - first:
+      43: 4300032
+    second: bolt8
+  - first:
+      43: 4300034
+    second: bolt6
+  - first:
+      43: 4300036
+    second: right_plate
+  - first:
+      43: 4300038
+    second: right_arm
+  - first:
+      43: 4300040
+    second: bolt3
+  - first:
+      43: 4300042
+    second: bolt1
+  - first:
+      43: 4300044
+    second: bolt4
+  - first:
+      43: 4300046
+    second: bolt2
+  - first:
+      43: 4300048
+    second: ballJoint1
+  - first:
+      43: 4300050
+    second: ballJoint2
+  - first:
+      43: 4300052
+    second: arm2
+  - first:
+      43: 4300054
+    second: bolt7
+  - first:
+      43: 4300056
+    second: bolt5
+  - first:
+      43: 4300058
+    second: bolt8
+  - first:
+      43: 4300060
+    second: bolt6
+  - first:
+      43: 4300062
+    second: left_plate
+  - first:
+      43: 4300064
+    second: left_arm
+  - first:
+      43: 4300066
+    second: bolt3
+  - first:
+      43: 4300068
+    second: bolt1
+  - first:
+      43: 4300070
+    second: bolt4
+  - first:
+      43: 4300072
+    second: bolt2
+  - first:
+      43: 4300074
+    second: ballJoint1
+  - first:
+      43: 4300076
+    second: ballJoint2
+  - first:
+      43: 4300078
+    second: body
+  - first:
+      43: 4300080
+    second: eyeLid
+  - first:
+      43: 4300082
+    second: eyeDome
+  - first:
+      43: 4300084
+    second: eyeDome1
+  - first:
+      43: 4300086
+    second: l_eye
+  - first:
+      43: 4300088
+    second: r_eye
+  - first:
+      74: 7400000
+    second: anim_Idle_Loop_S
+  - first:
+      95: 9500000
+    second: //RootNode
+  externalObjects: {}
+  materials:
+    materialImportMode: 0
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: anim_Idle_Loop_S
+      takeName: Idle_Loop_S
+      internalID: 0
+      firstFrame: 1
+      lastFrame: 100
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 1
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

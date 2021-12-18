@@ -367,7 +367,6 @@
             var p = patches[pId];
             p.Deactivate();
             drawablePatches.Remove(pId);
-            //building队列会自己pop
         }
         public void DrawDebug()
         {
