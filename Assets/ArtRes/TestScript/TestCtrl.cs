@@ -7,8 +7,9 @@ using Cinemachine;
 using TMPro;
 using MightyTerrainMesh;
 
-public class TestCtrl : MonoBehaviour
+public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
 {
+    public GameObject waterPlane;
     public GameObject MainPanel;
     public GameObject Pad;
     public CinemachineVirtualCamera vcam;
@@ -21,6 +22,14 @@ public class TestCtrl : MonoBehaviour
     private float preFrameSampleTime = 0;
     private int preFrameSampleCount = 0;
     private Vector3? moveDelta = null;
+    void Awake()
+    {
+        MTWaterHeight.RegProvider(this);
+    }
+    void OnDestroy()
+    {
+        MTWaterHeight.UnregProvider(this);
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -132,5 +141,17 @@ public class TestCtrl : MonoBehaviour
             return h;
         }
         return pos.y;
+    }
+
+    public bool Contains(Vector3 worldPos)
+    {
+        return true;
+    }
+
+    float IMTWaterHeightProvider.GetHeight(Vector3 worldPos)
+    {
+        if (waterPlane != null)
+            return waterPlane.transform.position.y;
+        return 0;
     }
 }

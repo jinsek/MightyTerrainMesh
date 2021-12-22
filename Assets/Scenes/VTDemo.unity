@@ -240,6 +240,12 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
+--- !u!1 &1071941703 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2811455712531635176, guid: 023face2bc5835640a48d54082f07c68,
+    type: 3}
+  m_PrefabInstance: {fileID: 1099531361}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1099531361
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -321,6 +327,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: TestCtrls
       objectReference: {fileID: 0}
+    - target: {fileID: 4731915105495958186, guid: 02f356937fcc5e744be0e4cd16a676b8,
+        type: 3}
+      propertyPath: waterPlane
+      value: 
+      objectReference: {fileID: 1071941703}
     - target: {fileID: 4731915105495958187, guid: 02f356937fcc5e744be0e4cd16a676b8,
         type: 3}
       propertyPath: m_RootOrder

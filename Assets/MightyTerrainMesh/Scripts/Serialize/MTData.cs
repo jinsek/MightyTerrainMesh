@@ -16,6 +16,7 @@
         public Color healthyColor;
         public Color dryColor;
         public int maxDensity;
+        public bool waterFloating;
     }
 
     public class MTData : ScriptableObject

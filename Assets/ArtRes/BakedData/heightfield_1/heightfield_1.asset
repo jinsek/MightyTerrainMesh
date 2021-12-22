@@ -39,6 +39,7 @@ MonoBehaviour:
     healthyColor: {r: 1, g: 1, b: 1, a: 1}
     dryColor: {r: 1, g: 1, b: 1, a: 1}
     maxDensity: 0
+    waterFloating: 1
   - prototype: {fileID: 8976685920760456344, guid: 8fd5383d027ec5741880a29061024733,
       type: 3}
     minWidth: 2
@@ -49,6 +50,7 @@ MonoBehaviour:
     healthyColor: {r: 1, g: 1, b: 1, a: 1}
     dryColor: {r: 1, g: 1, b: 1, a: 1}
     maxDensity: 1
+    waterFloating: 1
   - prototype: {fileID: 6601052348899811647, guid: ca7b709f99cc8994083ebb1bbfa2a4f8,
       type: 3}
     minWidth: 2
@@ -59,6 +61,7 @@ MonoBehaviour:
     healthyColor: {r: 1, g: 1, b: 1, a: 1}
     dryColor: {r: 1, g: 1, b: 1, a: 1}
     maxDensity: 2
+    waterFloating: 0
   - prototype: {fileID: 6435149076381368683, guid: e8ef04ec02981c84bbf565847d6f40cd,
       type: 3}
     minWidth: 6
@@ -69,6 +72,7 @@ MonoBehaviour:
     healthyColor: {r: 1, g: 1, b: 1, a: 1}
     dryColor: {r: 1, g: 1, b: 1, a: 1}
     maxDensity: 3
+    waterFloating: 0
   DetailWidth: 256
   DetailHeight: 256
   DetailResolutionPerPatch: 16

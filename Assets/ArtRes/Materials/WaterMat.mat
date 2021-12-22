@@ -79,7 +79,7 @@ Material:
     m_Floats:
     - _AlphaClip: 0
     - _Blend: 0
-    - _BumpScale: 3
+    - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
@@ -98,12 +98,12 @@ Material:
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _RefractionStrength: 0.01
-    - _Smoothness: 0.5
+    - _Smoothness: 0.8
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
-    - _WaterAbsorption: 0.92
+    - _WaterAbsorption: 1
     - _WavesSpeed: 0.02
     - _WorkflowMode: 1
     - _ZWrite: 1

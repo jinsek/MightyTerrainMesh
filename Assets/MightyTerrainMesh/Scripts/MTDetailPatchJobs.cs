@@ -211,6 +211,10 @@ namespace MightyTerrainMesh
                             var idxInJob = batch * 1023 + i;
                             Vector3 pos = job.positions[idxInJob];
                             MTHeightMap.GetHeightInterpolated(pos, ref pos.y);
+                            if (this.layerData.waterFloating)
+                            {
+                                pos.y = MTWaterHeight.GetWaterHeight(pos);
+                            }
                             Quaternion q = Quaternion.Euler(0, job.orientations[idxInJob], 0);
                             param.matrixs[i] = Matrix4x4.Translate(pos) * Matrix4x4.Scale(job.scales[idxInJob]) * Matrix4x4.Rotate(q);
                             param.colors[i] = job.colors[idxInJob];
