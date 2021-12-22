@@ -7,7 +7,9 @@ Shader "Unlit/Water"
         _BumpMap("Normal Map", 2D) = "bump" {}
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
         _MaxDepth("Depth", Float) = 1.0
+        _WaterAbsorption("Water Absorption", Float) = 1.0
         _WavesSpeed("Waves Speed", Float) = 1.0            
+        _RefractionStrength("Refraction Strength", Float) = 1.0    
     }
     SubShader
     {

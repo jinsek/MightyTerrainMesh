@@ -105,17 +105,14 @@ half4 LitPassFragment(Varyings input) : SV_Target
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
     SurfaceData surfaceData;
-    InitializeStandardLitSurfaceData(input.uv, surfaceData);
+    InitializeStandardLitSurfaceData(input.uv, input.screenUV, input.positionWS, surfaceData);
     InputData inputData;
     InitializeInputData(input, surfaceData.normalTS, inputData);
-    //depth transparent
-    float2 screen_uv = (input.screenUV.xy / input.screenUV.z);
-    float depth = SampleSceneDepth(screen_uv);
-    float3 depthWSPos = ComputeWorldSpacePosition(screen_uv, depth, UNITY_MATRIX_I_VP);
-    float waterDepth = length(inputData.positionWS - depthWSPos);
-    surfaceData.alpha *= clamp(waterDepth / _MaxDepth, 0, 1);
 
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
+
+    //refractions
+    color.rgb += surfaceData.albedo * surfaceData.alpha;
 
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
     return color;
