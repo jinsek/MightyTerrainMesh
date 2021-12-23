@@ -11,6 +11,7 @@ Shader "MT/WavingGrass"
 		_WindControl("Wind Control", Vector) = (1, 1, 1, 1)
 		_WaveSpeed("Wave Speed", Float) = 1
 		_Smoothness("Smoothness", Float) = 1.0
+		_Transluency("Transluency", Range(0, 1)) = 0.5
 		[Toggle(FORCE_UP_NORMAL)]FORCE_UP_NORMAL("Force Up Normal", Float) = 0
 		[Toggle(INTERACTIVE)]INTERACTIVE("Interactive", Float) = 0
 	}
@@ -62,6 +63,7 @@ Shader "MT/WavingGrass"
 			#endif
 
 			#include "./MTWavingGrassInput.hlsl"
+			#include "./MTWavingGrassLighting.hlsl"
 			UNITY_INSTANCING_BUFFER_START(Props)
 				UNITY_DEFINE_INSTANCED_PROP(float4, _PerInstanceColor)
 			UNITY_INSTANCING_BUFFER_END(Props)
@@ -107,7 +109,7 @@ Shader "MT/WavingGrass"
 				InputData inputData;
 				InitializeInputData(input, surfaceData.normalTS, inputData);
 				#ifdef _NORMALMAP
-				half4 color = UniversalFragmentPBR(inputData, surfaceData);
+				half4 color = FragmentTransluentPBR(inputData, surfaceData);
 				#else
 				half4 color = UniversalFragmentBlinnPhong(inputData, surfaceData);
 				#endif

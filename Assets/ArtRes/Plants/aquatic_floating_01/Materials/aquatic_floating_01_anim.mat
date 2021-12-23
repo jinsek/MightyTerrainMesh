@@ -118,6 +118,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
+    - _Transluency: 0.3
     - _WaveSpeed: 3
     - _WorkflowMode: 1
     - _ZWrite: 1
@@ -127,5 +128,5 @@ Material:
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
     - _WavingTint: {r: 1, g: 1, b: 1, a: 1}
-    - _WindControl: {r: 0.1, g: 0.1, b: 0.1, a: 5}
+    - _WindControl: {r: 0.01, g: 0.1, b: 0.01, a: 5}
   m_BuildTextureStacks: []

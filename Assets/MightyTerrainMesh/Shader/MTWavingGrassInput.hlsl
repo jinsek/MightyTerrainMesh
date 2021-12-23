@@ -15,6 +15,7 @@ half4 _SpecColor;
 half4 _EmissionColor;
 half _Cutoff;
 half _Smoothness;
+half _Transluency;
 CBUFFER_END
 
 TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);		
