@@ -45,7 +45,7 @@
         }
         private MTData rawData;
         private Dictionary<int, MTRenderMesh> parsedMesh = new Dictionary<int, MTRenderMesh>();
-        //数据缓存，一旦全部转换为mesh后将删除
+        //memory data cache, once all data parsed into mesh, it will be destroied
         private Dictionary<string, MeshStreamCache> dataStreams = new Dictionary<string, MeshStreamCache>();
         private IMeshDataLoader loader;
         public MTRuntimeMeshPool(MTData data, IMeshDataLoader ld)
