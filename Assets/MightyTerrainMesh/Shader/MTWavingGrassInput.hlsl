@@ -14,11 +14,10 @@ half4 _BaseColor;
 half4 _SpecColor;
 half4 _EmissionColor;
 half _Cutoff;
-half _Shininess;
+half _Smoothness;
 CBUFFER_END
 
-TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);			
-
+TEXTURE2D(_MainTex);            SAMPLER(sampler_MainTex);		
 // ---- Grass helpers
 
 struct GrassVertexInput
@@ -39,8 +38,8 @@ struct GrassVertexOutput
 
 	float4 posWSShininess           : TEXCOORD2;    // xyz: posWS, w: Shininess * 128
 
-	half3  normal                   : TEXCOORD3;
-	half3 viewDir                   : TEXCOORD4;
+	half3 normalWS                  : TEXCOORD3;
+    half4 tangentWS                 : TEXCOORD4;    // xyz: tangent, w: sign
 
 	half4 fogFactorAndVertexLight   : TEXCOORD5; // x: fogFactor, yzw: vertex light
 
@@ -54,17 +53,26 @@ struct GrassVertexOutput
 		UNITY_VERTEX_OUTPUT_STEREO
 };
 
-void InitializeInputData(GrassVertexOutput input, out InputData inputData)
+void InitializeInputData(GrassVertexOutput input, half3 normalTS, out InputData inputData)
 {
 	inputData = (InputData)0;
 	inputData.positionWS = input.posWSShininess.xyz;
 
-	half3 viewDirWS = input.viewDir;
+	half3 viewDirWS = GetWorldSpaceNormalizeViewDir(inputData.positionWS);
 #if SHADER_HINT_NICE_QUALITY
 	viewDirWS = SafeNormalize(viewDirWS);
 #endif
 
-	inputData.normalWS = NormalizeNormalPerPixel(input.normal);
+#ifdef _NORMALMAP
+	float sgn = input.tangentWS.w;      // should be either +1 or -1
+    float3 bitangent = sgn * cross(input.normalWS.xyz, input.tangentWS.xyz);
+    half3x3 tangentToWorld = half3x3(input.tangentWS.xyz, bitangent.xyz, input.normalWS.xyz);
+    inputData.tangentToWorld = tangentToWorld;
+    inputData.normalWS = TransformTangentToWorld(normalTS, tangentToWorld);
+    inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
+#else
+	inputData.normalWS = NormalizeNormalPerPixel(input.normalWS);
+#endif
 
 	inputData.viewDirectionWS = viewDirWS;
 #ifdef _MAIN_LIGHT_SHADOWS
@@ -106,7 +114,7 @@ void InitializeVertData(GrassVertexInput input, inout GrassVertexOutput vertData
 	float3 rangeV = worldPos - _Grass_Press_Point.xyz;
 	float pressVal = clamp(dot(rangeV, rangeV), 0, radius);
 	pressVal = lerp(1, 0, pressVal / radius);
-	float3 pressOffset = radius * pow(pressVal, 2.0) * normalize(rangeV);
+	float3 pressOffset = radius * pow(pressVal, 2.0) * normalize(rangeV) * input.color.a;
 	#else
 	float3 pressOffset = 0;
 	#endif
@@ -117,16 +125,16 @@ void InitializeVertData(GrassVertexInput input, inout GrassVertexOutput vertData
 	vertData.posWSShininess.xyz = vertexInput.positionWS;
 	vertData.posWSShininess.w = 32;
 	vertData.clipPos = TransformWorldToHClip(vertexInput.positionWS);
-	vertData.viewDir = GetCameraPositionWS() - vertexInput.positionWS;
-
-#if !SHADER_QUALITY_NICE_HINT
-	vertData.viewDir = SafeNormalize(vertData.viewDir);
-#endif
 
 	#if defined(FORCE_UP_NORMAL)
-		vertData.normal = float3(0, 1, 0); 
+		vertData.normalWS = float3(0, 1, 0); 
+		vertData.tangentWS = float4(0, 0, 1, 1); 
 	#else
-		vertData.normal = TransformObjectToWorldNormal(input.normal);	
+		VertexNormalInputs normalInput = GetVertexNormalInputs(input.normal, input.tangent);
+		vertData.normalWS = normalInput.normalWS;
+		half sign = input.tangent.w * GetOddNegativeScale();
+		half4 tangentWS = half4(normalInput.tangentWS.xyz, sign);
+		vertData.tangentWS = tangentWS;	
 	#endif
 
 	// We either sample GI from lightmap or SH.
@@ -134,9 +142,9 @@ void InitializeVertData(GrassVertexInput input, inout GrassVertexOutput vertData
 	// see DECLARE_LIGHTMAP_OR_SH macro.
 	// The following funcions initialize the correct variable with correct data
 	OUTPUT_LIGHTMAP_UV(input.lightmapUV, unity_LightmapST, vertData.lightmapUV);
-	OUTPUT_SH(vertData.normal, vertData.vertexSH);
+	OUTPUT_SH(vertData.normalWS, vertData.vertexSH);
 
-	half3 vertexLight = VertexLighting(vertexInput.positionWS, vertData.normal.xyz);
+	half3 vertexLight = VertexLighting(vertexInput.positionWS, vertData.normalWS.xyz);
 	half fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
 	vertData.fogFactorAndVertexLight = half4(fogFactor, vertexLight);
 

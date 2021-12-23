@@ -121,8 +121,8 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
             ViewTarget.transform.position = nextPos;
             //update the grass interaction, this should consider the water height 
             nextPos.y = MTWaterHeight.GetWaterHeight(nextPos);
-            Vector4 grassPressPt = nextPos - 1.5f * Vector3.down;
-            grassPressPt.w = 3f;
+            Vector4 grassPressPt = nextPos;
+            grassPressPt.w = 3f; //this is the radius of a dummy press sphere
             Shader.SetGlobalVector("_Grass_Press_Point", grassPressPt);
         }
     }

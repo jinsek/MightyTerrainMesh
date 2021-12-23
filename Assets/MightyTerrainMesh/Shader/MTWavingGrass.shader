@@ -5,9 +5,12 @@ Shader "MT/WavingGrass"
     {
         _WavingTint ("Fade Color", Color) = (1, 1, 1, 1)
         _MainTex ("Base (RGB) Alpha (A)", 2D) = "white" {}
+		[Toggle(_NORMALMAP)]_NORMALMAP("Use Normal", Float) = 0
+        _BumpMap("Normal Map", 2D) = "bump" {}
 		_Cutoff("Cutoff", float) = 0.5
 		_WindControl("Wind Control", Vector) = (1, 1, 1, 1)
 		_WaveSpeed("Wave Speed", Float) = 1
+		_Smoothness("Smoothness", Float) = 1.0
 		[Toggle(FORCE_UP_NORMAL)]FORCE_UP_NORMAL("Force Up Normal", Float) = 0
 		[Toggle(INTERACTIVE)]INTERACTIVE("Interactive", Float) = 0
 	}
@@ -49,6 +52,7 @@ Shader "MT/WavingGrass"
 			///////////my defined
 			#pragma multi_compile _ FORCE_UP_NORMAL
 			#pragma multi_compile _ INTERACTIVE
+			#pragma multi_compile _ _NORMALMAP			
 			#pragma vertex WavingGrassVertInstance
 			#pragma fragment LitPassFragmentGrassInstance
 			#define _ALPHATEST_ON
@@ -79,23 +83,34 @@ Shader "MT/WavingGrass"
 				UNITY_SETUP_INSTANCE_ID(input);
 				UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input); 
 				half4 perInstance_c = UNITY_ACCESS_INSTANCED_PROP(Props, _PerInstanceColor);
+				
+				SurfaceData surfaceData;
+				surfaceData = (SurfaceData)0;
 
 				float2 uv = input.uv;
 				half4 diffuseAlpha = SampleAlbedoAlpha(uv, TEXTURE2D_ARGS(_MainTex, sampler_MainTex));
-				half3 diffuse = diffuseAlpha.rgb * perInstance_c.xyz * _WavingTint.rgb;
+				surfaceData.alpha = diffuseAlpha.a;
+				surfaceData.albedo = diffuseAlpha.rgb * perInstance_c.xyz * _WavingTint.rgb;
+				#ifdef _NORMALMAP
+				surfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap));
+				#else
+				surfaceData.normalTS = 0;
+				#endif
+				surfaceData.smoothness = _Smoothness;
+				surfaceData.occlusion = 1.0;
+				surfaceData.emission = 0.0;
+				surfaceData.clearCoatMask = half(0.0);
+				surfaceData.clearCoatSmoothness = half(0.0);
 
-				half alpha = diffuseAlpha.a;
-				AlphaDiscard(alpha, _Cutoff);
-				alpha *= input.color.a;
-
-				half3 emission = 0;
-				half4 specularGloss = 0.1;
-				half shininess = input.posWSShininess.w;
+				AlphaDiscard(surfaceData.alpha, _Cutoff);
 
 				InputData inputData;
-				InitializeInputData(input, inputData);
-				half3 normalTS = 0.0;
-				half4 color = UniversalFragmentBlinnPhong(inputData, diffuse, specularGloss, shininess, emission, alpha, normalTS);
+				InitializeInputData(input, surfaceData.normalTS, inputData);
+				#ifdef _NORMALMAP
+				half4 color = UniversalFragmentPBR(inputData, surfaceData);
+				#else
+				half4 color = UniversalFragmentBlinnPhong(inputData, surfaceData);
+				#endif
 				color.rgb = MixFog(color.rgb, inputData.fogCoord);
 				return color;
 			}

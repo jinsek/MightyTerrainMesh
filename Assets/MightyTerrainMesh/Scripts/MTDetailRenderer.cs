@@ -53,7 +53,8 @@
         public abstract bool IsSpawnDone { get; }
         protected Vector3 localScale = Vector3.one;
         protected Mesh mesh;
-        protected Material material;
+        protected Material material_lod0;
+        protected Material material_lod1;
         protected MTDetailLayerData layerData;
         protected MTArray<MTDetailPatchDrawParam> drawParam;
         protected int totalPrototypeCount;
@@ -63,28 +64,31 @@
             layerData = data;
             localScale = data.prototype.transform.localScale;
             mesh = data.prototype.GetComponent<MeshFilter>().sharedMesh;
-            material = data.prototype.GetComponent<MeshRenderer>().sharedMaterial;
+            material_lod0 = data.prototype.GetComponent<MeshRenderer>().sharedMaterial;
             isReceiveShadow = receiveShadow;
             if (isReceiveShadow)
             {
-                material.EnableKeyword("_MAIN_LIGHT_SHADOWS");
+                material_lod0.EnableKeyword("_MAIN_LIGHT_SHADOWS");
                 if (UniversalRenderPipeline.asset.supportsSoftShadows)
                 {
-                    material.EnableKeyword("_SHADOWS_SOFT");
+                    material_lod0.EnableKeyword("_SHADOWS_SOFT");
                 }
                 else
                 {
-                    material.DisableKeyword("_SHADOWS_SOFT");
+                    material_lod0.DisableKeyword("_SHADOWS_SOFT");
                 }
                 if (UniversalRenderPipeline.asset.shadowCascadeCount > 1)
                 {
-                    material.EnableKeyword("_MAIN_LIGHT_SHADOWS_CASCADE");
+                    material_lod0.EnableKeyword("_MAIN_LIGHT_SHADOWS_CASCADE");
                 }
                 else
                 {
-                    material.DisableKeyword("_MAIN_LIGHT_SHADOWS_CASCADE");
+                    material_lod0.DisableKeyword("_MAIN_LIGHT_SHADOWS_CASCADE");
                 }
             }
+            material_lod1 = new Material(material_lod0);
+            material_lod1.DisableKeyword("_NORMALMAP");
+            material_lod1.EnableKeyword("FORCE_UP_NORMAL");
         }
         public virtual void OnActivate()
         {
@@ -103,7 +107,7 @@
             }
         }
         public abstract void TickBuild();
-        public virtual void OnDraw(Camera drawCamera)
+        public virtual void OnDraw(Camera drawCamera, int lod)
         {
             if (drawParam != null)
             {
@@ -111,14 +115,24 @@
                 {
                     if (drawParam.Data[i].Used <= 0)
                         continue;
+                    var mat = material_lod0;
+                    if (lod > 0)
+                        mat = material_lod1;
                     drawParam.Data[i].matBlock.SetVectorArray("_PerInstanceColor", drawParam.Data[i].colors);
-                    Graphics.DrawMeshInstanced(mesh, 0, material, drawParam.Data[i].matrixs, drawParam.Data[i].Used,
+                    Graphics.DrawMeshInstanced(mesh, 0, mat, drawParam.Data[i].matrixs, drawParam.Data[i].Used,
                         drawParam.Data[i].matBlock, ShadowCastingMode.Off,
                         isReceiveShadow, LayerMask.NameToLayer("Default"), drawCamera);
                 }
             }
         }
-        public virtual void Clear() { }
+        public virtual void Clear() 
+        {
+            if (material_lod1 != null)
+            {
+                Object.Destroy(material_lod1);
+                material_lod1 = null;
+            }
+        }
     }
 
     public abstract class MTDetailPatch
@@ -130,12 +144,16 @@
         protected Vector3 pos_Param;
         protected MTData headerData;
         protected MTDetailPatchLayer[] layers;
+        protected Vector2 center;
+        protected float lod0Range;
         public MTDetailPatch(int dx, int dz, Vector3 posParam, MTData header)
         {
             den_x = dx;
             den_z = dz;
             pos_Param = posParam;
             headerData = header;
+            center = new Vector2(pos_Param.x + (den_x + 0.5f) * pos_Param.z, pos_Param.y + (den_z + 0.5f) * pos_Param.z);
+            lod0Range = pos_Param.z * 1.5f;
         }
         public virtual void Activate()
         {
@@ -158,9 +176,16 @@
         public abstract void TickBuild();
         public void Draw(Camera drawCamera)
         {
+            int lod = 1;
+            if (drawCamera != null)
+            {
+                Vector2 distance = new Vector2(center.x - drawCamera.transform.position.x, center.y - drawCamera.transform.position.z);
+                if (distance.magnitude < lod0Range)
+                    lod = 0;
+            }
             for (int i = 0; i < layers.Length; ++i)
             {
-                layers[i].OnDraw(drawCamera);
+                layers[i].OnDraw(drawCamera, lod);
             }
         }
         public void DrawDebug()
