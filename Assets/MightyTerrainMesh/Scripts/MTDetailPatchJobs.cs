@@ -221,6 +221,7 @@ namespace MightyTerrainMesh
                         }
                         drawParam.Add(param);
                     }
+                    OnDrawParamReady();
                 }
                 else
                 {

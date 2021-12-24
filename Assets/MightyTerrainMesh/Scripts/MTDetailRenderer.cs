@@ -59,12 +59,20 @@
         protected MTArray<MTDetailPatchDrawParam> drawParam;
         protected int totalPrototypeCount;
         protected bool isReceiveShadow = false;
+        //
+        const float maxCutoffVal = 1.01f;
+        const float cutoffAnimDuration = 0.3f;
+        protected float cutoffAnimStartTime = 0;
+        protected float cutoffVal = 0.5f;
+        protected float animCutoffVal = 0.5f;
         public MTDetailPatchLayer(MTDetailLayerData data, bool receiveShadow)
         {
             layerData = data;
             localScale = data.prototype.transform.localScale;
             mesh = data.prototype.GetComponent<MeshFilter>().sharedMesh;
-            material_lod0 = data.prototype.GetComponent<MeshRenderer>().sharedMaterial;
+            var matSrc = data.prototype.GetComponent<MeshRenderer>().sharedMaterial;
+            cutoffVal = matSrc.GetFloat("_Cutoff");
+            material_lod0 = new Material(matSrc);
             isReceiveShadow = receiveShadow;
             if (isReceiveShadow)
             {
@@ -94,6 +102,17 @@
         {
             totalPrototypeCount = 0;
         }
+        public virtual void OnDrawParamReady()
+        {
+            animCutoffVal = 1.01f;
+            cutoffAnimStartTime = Time.time;
+            ResetCutOffVal();
+        }
+        protected void ResetCutOffVal()
+        {
+            material_lod0.SetFloat("_Cutoff", animCutoffVal);
+            material_lod1.SetFloat("_Cutoff", animCutoffVal);
+        }
         public virtual void OnDeactive()
         {
             //has to return memory
@@ -111,6 +130,11 @@
         {
             if (drawParam != null)
             {
+                animCutoffVal = Mathf.Lerp(maxCutoffVal, cutoffVal, (Time.time - cutoffAnimStartTime) / cutoffAnimDuration);
+                if (animCutoffVal > cutoffVal)
+                {
+                    ResetCutOffVal();
+                }
                 for (int i = 0; i < drawParam.Length; ++i)
                 {
                     if (drawParam.Data[i].Used <= 0)
@@ -127,6 +151,11 @@
         }
         public virtual void Clear() 
         {
+            if (material_lod0 != null)
+            {
+                Object.Destroy(material_lod0);
+                material_lod0 = null;
+            }
             if (material_lod1 != null)
             {
                 Object.Destroy(material_lod1);
