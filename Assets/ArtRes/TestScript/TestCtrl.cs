@@ -22,6 +22,7 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
     private float preFrameSampleTime = 0;
     private int preFrameSampleCount = 0;
     private Vector3? moveDelta = null;
+    private float prevMoveUpdateTime = -1f;
     void Awake()
     {
         MTWaterHeight.RegProvider(this);
@@ -97,7 +98,12 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
             {
                 avatarForward.Normalize();
                 avatarSlot.localRotation = Quaternion.LookRotation(avatarForward, Vector3.up);
-                moveDelta = avatarSlot.rotation * Vector3.forward * Time.deltaTime * 3;
+                var moveForward = avatarSlot.rotation * Vector3.forward;
+                moveDelta = moveForward.normalized;
+            }
+            else
+            {
+                moveDelta = null;
             }
         }
     }
@@ -116,12 +122,12 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
         }
         if (moveDelta != null)
         {
-            var nextPos = ViewTarget.transform.position + moveDelta.Value;
+            var nextPos = ViewTarget.transform.position + moveDelta.Value * Time.deltaTime * 3f;
             nextPos.y = GetHeight(nextPos);
             ViewTarget.transform.position = nextPos;
             //update the grass interaction, this should consider the water height 
             nextPos.y = MTWaterHeight.GetWaterHeight(nextPos);
-            Vector4 grassPressPt = nextPos;
+            Vector4 grassPressPt = nextPos + 1.25f * Vector3.up;
             grassPressPt.w = 3f; //this is the radius of a dummy press sphere
             Shader.SetGlobalVector("_Grass_Press_Point", grassPressPt);
         }

@@ -118,7 +118,7 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
-    - _Transluency: 0.3
+    - _Transluency: 0.496
     - _WaveSpeed: 5
     - _WorkflowMode: 1
     - _ZWrite: 1
