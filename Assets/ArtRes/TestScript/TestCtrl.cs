@@ -24,6 +24,7 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
     private Vector3? moveDelta = null;
     void Awake()
     {
+        Application.targetFrameRate = 300;
         MTWaterHeight.RegProvider(this);
     }
     void OnDestroy()
@@ -82,7 +83,9 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
             var curYVal = orbitalTransposer.m_FollowOffset.y;
             orbitalTransposer.m_FollowOffset.y = Mathf.Clamp(curYVal + eventData.delta.y * 0.03f,
                 1, 20);
+            var avatarRot = avatarSlot.rotation;
             ViewTarget.transform.rotation *= Quaternion.Euler(0, eventData.delta.x * 0.12f, 0);
+            avatarSlot.rotation = avatarRot;
         }
     }
     void OnPadPanelDrag(PointerEventData eventData)
