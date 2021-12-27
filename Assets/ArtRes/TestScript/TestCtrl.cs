@@ -22,7 +22,6 @@ public class TestCtrl : MonoBehaviour, IMTWaterHeightProvider
     private float preFrameSampleTime = 0;
     private int preFrameSampleCount = 0;
     private Vector3? moveDelta = null;
-    private float prevMoveUpdateTime = -1f;
     void Awake()
     {
         MTWaterHeight.RegProvider(this);

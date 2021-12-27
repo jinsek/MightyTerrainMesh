@@ -48,6 +48,76 @@
             Used = 0;
         }
     }
+    internal class PatchMaterialCutoffAnim
+    {
+        const float maxCutoffVal = 1.01f;
+        const float cutoffAnimDuration = 0.3f;
+        public const int Playing = 0;
+        public const int PlayDone = 1;
+        public int State { get; private set; }
+        protected float cutoffAnimStartTime = 0;
+        protected float cutoffVal = 0.5f;
+        protected float animCutoffVal = 0.5f;
+        public bool Reversed { get; private set; }
+        public bool MatInvisible
+        {
+            get
+            {
+                return State == PlayDone && Reversed;
+            }
+        }
+        protected Material target;
+        public PatchMaterialCutoffAnim(Material mat)
+        {
+            Reversed = false;
+            target = mat;
+            cutoffVal = target.GetFloat("_Cutoff");
+            State = PlayDone;
+        }
+        public void Replay(bool isReverse)
+        {
+            if (State == Playing && Reversed == isReverse)
+                return;
+            Reversed = isReverse;
+            if (State == Playing)
+            {
+                float timeSkiped = cutoffAnimDuration - (Time.time - cutoffAnimStartTime);
+                cutoffAnimStartTime = Time.time - timeSkiped;
+                InterpolateValue(timeSkiped);
+            }
+            else
+            {
+                cutoffAnimStartTime = Time.time;
+                animCutoffVal = Reversed ? cutoffVal : maxCutoffVal;
+            }
+            State = Playing;
+        }
+        private void InterpolateValue(float timePast)
+        {
+            float rate = timePast / cutoffAnimDuration;
+            if (Reversed)
+            {
+                animCutoffVal = Mathf.Lerp(cutoffVal, maxCutoffVal, rate);
+            }
+            else
+            {
+                animCutoffVal = Mathf.Lerp(maxCutoffVal, cutoffVal, rate);
+            }
+        }
+        public void Update()
+        {
+            if (State == PlayDone)
+                return;
+            float timePast = Time.time - cutoffAnimStartTime;
+            if (timePast >= cutoffAnimDuration)
+            {
+                State = PlayDone;
+                timePast = cutoffAnimDuration;
+            }
+            InterpolateValue(timePast);
+            target.SetFloat("_Cutoff", animCutoffVal);
+        }
+    }
     public abstract class MTDetailPatchLayer
     {
         public abstract bool IsSpawnDone { get; }
@@ -60,18 +130,13 @@
         protected int totalPrototypeCount;
         protected bool isReceiveShadow = false;
         //
-        const float maxCutoffVal = 1.01f;
-        const float cutoffAnimDuration = 0.3f;
-        protected float cutoffAnimStartTime = 0;
-        protected float cutoffVal = 0.5f;
-        protected float animCutoffVal = 0.5f;
+        PatchMaterialCutoffAnim cutoffAnim;
         public MTDetailPatchLayer(MTDetailLayerData data, bool receiveShadow)
         {
             layerData = data;
             localScale = data.prototype.transform.localScale;
             mesh = data.prototype.GetComponent<MeshFilter>().sharedMesh;
             var matSrc = data.prototype.GetComponent<MeshRenderer>().sharedMaterial;
-            cutoffVal = matSrc.GetFloat("_Cutoff");
             material_lod0 = new Material(matSrc);
             isReceiveShadow = receiveShadow;
             if (isReceiveShadow)
@@ -97,28 +162,35 @@
             material_lod1 = new Material(material_lod0);
             material_lod1.DisableKeyword("_NORMALMAP");
             material_lod1.EnableKeyword("FORCE_UP_NORMAL");
+            cutoffAnim = new PatchMaterialCutoffAnim(material_lod1);
         }
-        public virtual void OnActivate()
+        public virtual void OnActivate(bool rebuild)
         {
-            totalPrototypeCount = 0;
+            if (cutoffAnim.State != PatchMaterialCutoffAnim.PlayDone)
+            {
+                //still visible
+                cutoffAnim.Replay(false);
+            }
+            if (rebuild)
+            {
+                //go to rebuild parameters
+                totalPrototypeCount = 0;
+            }
         }
         public virtual void OnDrawParamReady()
         {
-            animCutoffVal = 1.01f;
-            cutoffAnimStartTime = Time.time;
-            ResetCutOffVal();
-        }
-        protected void ResetCutOffVal()
-        {
-            material_lod0.SetFloat("_Cutoff", animCutoffVal);
-            material_lod1.SetFloat("_Cutoff", animCutoffVal);
+            cutoffAnim.Replay(false);
         }
         public virtual void OnDeactive()
+        {
+            cutoffAnim.Replay(true);
+        }
+        public virtual void PushData()
         {
             //has to return memory
             if (drawParam != null)
             {
-                for(int i=0; i<drawParam.Length; ++i)
+                for (int i = 0; i < drawParam.Length; ++i)
                 {
                     MTDetailPatchDrawParam.Push(drawParam.Data[i]);
                 }
@@ -126,15 +198,17 @@
             }
         }
         public abstract void TickBuild();
-        public virtual void OnDraw(Camera drawCamera, int lod)
+        public virtual void OnDraw(Camera drawCamera, int lod, ref bool matInvisible)
         {
             if (drawParam != null)
             {
-                animCutoffVal = Mathf.Lerp(maxCutoffVal, cutoffVal, (Time.time - cutoffAnimStartTime) / cutoffAnimDuration);
-                if (animCutoffVal > cutoffVal)
+                cutoffAnim.Update();
+                if (cutoffAnim.MatInvisible)
                 {
-                    ResetCutOffVal();
+                    matInvisible = true;
+                    return;
                 }
+                matInvisible = false;
                 for (int i = 0; i < drawParam.Length; ++i)
                 {
                     if (drawParam.Data[i].Used <= 0)
@@ -149,8 +223,10 @@
                 }
             }
         }
-        public virtual void Clear() 
+        public virtual void Clear()
         {
+            PushData();
+            cutoffAnim = null;
             if (material_lod0 != null)
             {
                 Object.Destroy(material_lod0);
@@ -166,7 +242,6 @@
 
     public abstract class MTDetailPatch
     {
-        public abstract bool IsActive { get; }
         public abstract bool IsBuildDone { get; }
         protected int den_x;
         protected int den_z;
@@ -188,7 +263,7 @@
         {
             for (int l = 0; l < layers.Length; ++l)
             {
-                layers[l].OnActivate();
+                layers[l].OnActivate(true);
             }
         }
         public virtual void Deactivate()
@@ -198,12 +273,22 @@
                 layers[l].OnDeactive();
             }
         }
+        public virtual void PushData()
+        {
+            for (int l = 0; l < layers.Length; ++l)
+            {
+                layers[l].PushData();
+            }
+        }
         public virtual void Clear()
         {
-            Deactivate();
+            for (int l = 0; l < layers.Length; ++l)
+            {
+                layers[l].Clear();
+            }
         }
         public abstract void TickBuild();
-        public void Draw(Camera drawCamera)
+        public void Draw(Camera drawCamera, ref bool bInvisible)
         {
             int lod = 1;
             if (drawCamera != null)
@@ -212,9 +297,13 @@
                 if (distance.magnitude < lod0Range)
                     lod = 0;
             }
+            bInvisible = true;
             for (int i = 0; i < layers.Length; ++i)
             {
-                layers[i].OnDraw(drawCamera, lod);
+                bool matInvisible = true;
+                layers[i].OnDraw(drawCamera, lod, ref matInvisible);
+                if (!matInvisible)
+                    bInvisible = false;
             }
         }
         public void DrawDebug()
@@ -298,7 +387,7 @@
         private MTDetailQuadTreeNode tree;
         private int patch_x = 1;
         private int patch_z = 1;
-        private Queue<int> buildingPatches = new Queue<int>();
+        private List<int> buildingPatches = new List<int>();
         private bool receiveShadow = true;
         private List<int> drawablePatches = new List<int>();
         private MTArray<int> currentVisible;
@@ -355,37 +444,33 @@
         }
         public void OnUpdate(Camera drawCamera)
         {            
-            int loopCount = buildingPatches.Count;
-            while (loopCount > 0)
+            for (int i = buildingPatches.Count - 1; i>= 0; --i)
             {
-                --loopCount;
-                var pid = buildingPatches.Dequeue();
+                var pid = buildingPatches[i];
                 var p = patches[pid];
-                if (p.IsActive)
+                p.TickBuild();
+                if (p.IsBuildDone)
                 {
-                    p.TickBuild();
-                    if (p.IsBuildDone)
-                    {
-                        //MTLog.Log("buildingPatches : " + buildingPatches.Count);
-                        drawablePatches.Add(pid);
-                    }
-                    else
-                    {
-                        buildingPatches.Enqueue(pid);
-                    }
+                    buildingPatches.RemoveAt(i);
+                    //MTLog.Log("buildingPatches : " + buildingPatches.Count);
+                    drawablePatches.Add(pid);
                 }
             }
-            foreach(var pid in drawablePatches)
+            for (int i = drawablePatches.Count - 1; i >= 0; --i )
             {
-                patches[pid].Draw(drawCamera);
+                var pid = drawablePatches[i];
+                var p = patches[pid];
+                bool invisible = false;
+                p.Draw(drawCamera, ref invisible);
+                if (invisible)
+                {
+                    p.PushData();
+                    drawablePatches.RemoveAt(i);
+                }
             }
         }
         public void Clear()
         {
-            while (buildingPatches.Count > 0)
-            {
-                var pid = buildingPatches.Dequeue();
-            }
             drawablePatches.Clear();
             buildingPatches.Clear();
             MTDetailPatchDrawParam.Clear();
@@ -413,14 +498,19 @@
             if (p != null)
             {
                 p.Activate();
-                buildingPatches.Enqueue(pId);
+                if (!p.IsBuildDone)
+                    buildingPatches.Add(pId);
             }
         }
         private void DeactivePatch(int pId)
         {
             var p = patches[pId];
             p.Deactivate();
-            drawablePatches.Remove(pId);
+            if (!p.IsBuildDone)
+            {
+                p.PushData();
+                buildingPatches.Remove(pId);
+            }
         }
         public void DrawDebug()
         {

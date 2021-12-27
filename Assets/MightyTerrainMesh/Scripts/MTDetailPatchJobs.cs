@@ -132,16 +132,19 @@ namespace MightyTerrainMesh
         public MTDetailPatchLayerJob(MTDetailLayerData data, MTDetailLayerCreateJob j, bool receiveShadow) : base(data, receiveShadow)
         {
             job = j;
-        }
-        public override void OnActivate()
+        }        
+        public override void OnActivate(bool rebuild)
         {
-            base.OnActivate();
-            if (state != JobState.Wait)
+            base.OnActivate(rebuild);
+            if (rebuild)
             {
-                Debug.LogWarning("MTDetailPatchLayerJob OnActivate state is not WAIT");
-                return;
+                if (state != JobState.Wait)
+                {
+                    Debug.LogWarning("MTDetailPatchLayerJob OnActivate state should not be " + state.ToString());
+                    return;
+                }
+                TrySchedualJob();
             }
-            TrySchedualJob();
         }
         public override void OnDeactive()
         {
@@ -256,10 +259,8 @@ namespace MightyTerrainMesh
     }
     public class MTDetailPatchJobs : MTDetailPatch
     {
-        public override bool IsActive { get { return isActive; } }
         public override bool IsBuildDone { get { return buildDone; } }
         private bool buildDone = false;
-        private bool isActive = false;
         public MTDetailPatchJobs(int dx, int dz, int patchX, int patchZ, Vector3 posParam, bool receiveShadow, 
             MTData header, int[] patchDataOffsets, NativeArray<byte> ddata) 
             : base(dx, dz, posParam, header)
@@ -326,24 +327,20 @@ namespace MightyTerrainMesh
         }
         public override void Activate()
         {
-            if (IsActive)
-                return;
-            base.Activate();
-            isActive = true;
-            buildDone = false;
+            bool rebuild = !buildDone;
+            for (int l = 0; l < layers.Length; ++l)
+            {
+                layers[l].OnActivate(rebuild);
+            }
         }
-        public override void Deactivate()
+        public override void PushData()
         {
-            if (!isActive)
-                return;
-            base.Deactivate();
-            isActive = false;
+            base.PushData();
+            buildDone = false;
         }
         public override void Clear()
         {
-            base.Deactivate();
-            isActive = false;
-            buildDone = true;
+            buildDone = false;
             foreach (var l in layers)
             {
                 l.Clear();
