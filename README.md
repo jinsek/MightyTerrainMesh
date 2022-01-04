@@ -1,5 +1,5 @@
 # MightyTerrainMesh
-A Unity Plugin for Converting Terrain 2 Mesh with LOD & QaudTree infomation.
+A Unity Plugin for Converting Terrain 2 Mesh with LOD & QuadTree infomation.
 
 There are some introduction & result here :
 
